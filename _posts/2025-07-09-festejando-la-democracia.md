@@ -46,11 +46,13 @@ Algún editor de Proedi mencionaba en la entrevista de Modo Historia que todaví
 Guille había encontrado que el juego de Alfonsín había salido en Programación Popular número 12, revista de la cual no recuerdo haber tenido más que ese número, y que a decir verdad había olvidado por completo. Y me mandó también las páginas escaneadas del juego. Gracias de nuevo a los Bytemaníacos por haberlas preservado.
 
 <div class="figure-row figure-row--tall">
-    <figure><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p33.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 33" loading="lazy"></figure>
-    <figure><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p34.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 34" loading="lazy"></figure>
-    <figure><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p35.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 35" loading="lazy"></figure>
-    <figure><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p36.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 36" loading="lazy"></figure>
+    <figure><a class="zoom" href="{{ '/img/festejando-la-democracia/programacion-popular-12-p33-full.jpg' | prepend: site.baseurl }}" data-lightbox="pp12"><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p33.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 33" loading="lazy"></a></figure>
+    <figure><a class="zoom" href="{{ '/img/festejando-la-democracia/programacion-popular-12-p34-full.jpg' | prepend: site.baseurl }}" data-lightbox="pp12"><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p34.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 34" loading="lazy"></a></figure>
+    <figure><a class="zoom" href="{{ '/img/festejando-la-democracia/programacion-popular-12-p35-full.jpg' | prepend: site.baseurl }}" data-lightbox="pp12"><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p35.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 35" loading="lazy"></a></figure>
+    <figure><a class="zoom" href="{{ '/img/festejando-la-democracia/programacion-popular-12-p36-full.jpg' | prepend: site.baseurl }}" data-lightbox="pp12"><img src="{{ '/img/festejando-la-democracia/programacion-popular-12-p36.jpg' | prepend: site.baseurl }}" alt="Programación Popular número 12, página 36" loading="lazy"></a></figure>
 </div>
+
+<p class="figure-hint">Hacé clic en una página para verla a pantalla completa.</p>
 
 En cuanto tuve un ratito libre, tras unos meses de intenso ventiladoreo, puse manos a la obra. Y tras un par de noches mal dormidas, y alguna otra noche más de debuggeo pude volver a tipear el juego que, esta vez sí, voy a dejar subido a [archive.org](https://archive.org) para que sea mucho más fácil volverlo a jugar. Les presento “Alfonsín” de José Ricardo Maicas, el programa del mes de Febrero de 1986 y ganador del premio de ₳25 (¡veinticinco australes!):
 
