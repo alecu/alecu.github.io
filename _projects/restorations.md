@@ -5,7 +5,7 @@ years: Ongoing
 tagline: Bringing vintage computers back to life, for my collection and for EspacioTec.
 image: img/placeholders/restorations.svg
 image_alt: Placeholder illustration of a vintage computer front panel with a circuit trace
-description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS and more.
+description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS, and five more on the bench.
 links:
   - label: EspacioTec
     url: https://espaciotec.com.ar/
@@ -28,9 +28,15 @@ The restoration started in February 2024, and the computer boots again. The boar
 
 These are the first milestones from the restoration log. Photos and a proper write-up are coming.
 
-## More on the bench
+## On the bench
 
-A few more machines are being restored, for my collection and for the museum. Their stories will show up here as they come back to life.
+More machines are being restored, for my collection and for the museum. Their stories will show up here as they come back to life.
+
+- **TRS-80 Model III** (1980): Tandy's all-in-one Z80 computer, with the monitor built in.
+- **Commodore SX-64** (1983): a portable Commodore 64 with a built-in colour screen and disk drive.
+- **Amstrad CPC 464** (1984): a Z80 home computer with a built-in cassette deck.
+- **BBC Micro Model B** (1981): Acorn's 6502 computer, a fixture of British classrooms.
+- **Oric Atmos** (1984): Oric's 6502 home computer, the successor of the Oric-1.
 
 ## EspacioTec
 

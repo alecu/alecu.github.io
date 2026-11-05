@@ -36,6 +36,7 @@ en:
     restored: Restored
     in_progress: In progress
     soon: On the bench
+    bench: On the bench
     owner: Belongs to
   languages:
     es: Spanish

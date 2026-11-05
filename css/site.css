@@ -230,7 +230,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 
 /* Restoration machines */
 
-.machine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
 .machine { display: flex; flex-direction: column; background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; color: var(--text); text-decoration: none; }
 .machine:hover .machine__name { color: var(--accent); }
 .machine__img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
@@ -265,3 +265,10 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 .embed button:hover::after { background-color: var(--accent); }
 .figure-row img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
 .figure-row--tall img { aspect-ratio: 708 / 1024; }
+
+.bench-title { font: 700 .8rem var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 28px 0 12px; }
+.bench { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.bench__item { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.bench__name { font-weight: 700; }
+.bench__year { font: .75rem var(--font-mono); color: var(--accent); margin-left: 6px; }
+.bench__summary { font-size: .9rem; color: var(--muted); }

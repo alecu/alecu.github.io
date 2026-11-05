@@ -11,7 +11,7 @@ Decisions so far:
 - Old Snappy posts move to an Archive and stay out of the main blog and the homepage.
 - Reflektor links to `http://reflektor.protocultura.net/` (currently redirects to the post on this blog; adjust later if the blog layout changes).
 - The Virtuality 1000CS restoration (EspacioTec) is now public on the site, on the same footing as the Apple Lisa. Longer private notes live in `.private/`, which git ignores; only what alecu approves goes into the repo.
-- Restorations are data-driven (`_data/restorations.yml`: name, status, owner, summary) so more machines can be added as cards. A "More on the bench" placeholder card holds the space for the machines alecu is still working on.
+- Restorations are data-driven (`_data/restorations.yml`: name, status, owner, summary) so more machines can be added as cards. Machines without photos go in a compact "On the bench" list under the cards. On the bench: TRS-80 Model III, Commodore SX-64, Amstrad CPC 464, BBC Micro Model B and Oric Atmos. Each can get a full card once it has a photo and a text.
 
 ## Projects
 
@@ -23,7 +23,7 @@ Main (cards above the fold):
 | Super Ventilagon | https://ventilagon.protocultura.net/ | The original game that grew into Ventilastation (2015). |
 | Reflektor | http://reflektor.protocultura.net/ | First electromechanical game (2013). |
 | Megajuegos | https://www.megajuegos.com.ar/ | Founded and led by alecu, 2016-2022. |
-| Restorations | `/projects/restorations/` | Apple Lisa (alecu's collection), Virtuality 1000CS (EspacioTec, in progress), more on the bench. EspacioTec is explained and linked: https://espaciotec.com.ar/ |
+| Restorations | `/projects/restorations/` | Apple Lisa (alecu's collection), Virtuality 1000CS (EspacioTec, in progress), plus five machines on the bench. EspacioTec is explained and linked: https://espaciotec.com.ar/ |
 
 Smaller (demos and tools):
 
@@ -123,5 +123,5 @@ Written as retrospective posts, drafted from repos, commit history, docs and ale
 - Matching photos, after the texts are approved.
 - Talks: the exact Nerdearla date, if you want it shown.
 - Confirmation of facts that can't be read online: Megajuegos history and the Lisa restoration timeline.
-- The names and status of the other machines being restored.
+- For each machine on the bench: status, whether it is yours or EspacioTec's, and a photo, so it can become a full card.
 - Photos for the Virtuality and Lisa cards, after the texts are approved.
