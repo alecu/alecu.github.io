@@ -5,7 +5,7 @@ years: Ongoing
 tagline: Bringing vintage computers back to life, for my collection and for EspacioTec.
 image: img/placeholders/restorations.svg
 image_alt: Placeholder illustration of a vintage computer front panel with a circuit trace
-description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS, and five more on the bench.
+description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS, and more on the bench.
 links:
   - label: EspacioTec
     url: https://espaciotec.com.ar/
@@ -30,7 +30,7 @@ These are the first milestones from the restoration log. Photos and a proper wri
 
 ## On the bench
 
-More machines are being restored: four for my collection and one for the museum. Their stories will show up here as they come back to life.
+These are the machines currently being restored, for my collection and for the museum. Their stories will show up here as they come back to life.
 
 - **TRS-80 Model III** (1980), my collection: Tandy's all-in-one Z80 computer, with the monitor built in.
 - **Commodore SX-64** (1983), my collection: a portable Commodore 64 with a built-in colour screen and disk drive.
