@@ -70,6 +70,29 @@ def restorations():
     svg("restorations", 40, "\n".join(parts))
 
 
-for fn in (ventilastation, ventilagon, megajuegos, restorations):
+def lisa():
+    parts = [
+        '<rect x="400" y="120" width="400" height="470" rx="18" fill="#e8e0c8" fill-opacity=".14" stroke="#e8e0c8" stroke-opacity=".5" stroke-width="4"/>',
+        '<rect x="450" y="170" width="300" height="220" rx="8" fill="#0b0d17" stroke="#5fd8ff" stroke-opacity=".6" stroke-width="3"/>',
+        '<rect x="450" y="430" width="300" height="12" rx="3" fill="#e8e0c8" fill-opacity=".5"/>',
+        '<rect x="450" y="465" width="300" height="12" rx="3" fill="#e8e0c8" fill-opacity=".3"/>',
+        '<circle cx="730" cy="530" r="9" fill="#ffb000"/>',
+        '<path d="M480 340 q40 -120 80 -60 t80 -40" fill="none" stroke="#ffb000" stroke-width="4" stroke-opacity=".8"/>',
+    ]
+    svg("lisa", 35, "\n".join(parts))
+
+
+def virtuality():
+    parts = [
+        '<rect x="300" y="230" width="600" height="230" rx="60" fill="#e8e0c8" fill-opacity=".12" stroke="#e8e0c8" stroke-opacity=".5" stroke-width="4"/>',
+        '<ellipse cx="450" cy="345" rx="95" ry="70" fill="#0b0d17" stroke="#5fd8ff" stroke-opacity=".7" stroke-width="4"/>',
+        '<ellipse cx="750" cy="345" rx="95" ry="70" fill="#0b0d17" stroke="#ff5fa8" stroke-opacity=".7" stroke-width="4"/>',
+        '<path d="M600 460 C600 560 520 600 420 660" fill="none" stroke="#e8e0c8" stroke-opacity=".4" stroke-width="6"/>',
+        '<path d="M300 300 C240 300 220 200 300 170 L900 170 C980 200 960 300 900 300" fill="none" stroke="#e8e0c8" stroke-opacity=".3" stroke-width="4"/>',
+    ]
+    svg("virtuality", 285, "\n".join(parts))
+
+
+for fn in (ventilastation, ventilagon, megajuegos, restorations, lisa, virtuality):
     fn()
 print("wrote", sorted(p.name for p in OUT.glob("*.svg")))

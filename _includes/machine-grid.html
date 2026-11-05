@@ -1,0 +1,14 @@
+{% assign t = site.data.i18n[page.lang] %}
+<div class="machine-grid">
+    {% for m in site.data.restorations %}
+    <a class="machine machine--{{ m.status }}" href="{{ '/projects/restorations/' | append: '#' | append: m.anchor | prepend: site.baseurl }}">
+        {% if m.image %}<img class="machine__img" src="{{ m.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ m.image_alt }}" loading="lazy">{% endif %}
+        <span class="machine__body">
+            <span class="machine__status">{{ t.restorations[m.status] }}</span>
+            <span class="machine__name">{{ m.name }}</span>
+            <span class="machine__owner">{{ t.restorations.owner }}: {{ m.owner }}</span>
+            <span class="machine__summary">{{ m.summary }}</span>
+        </span>
+    </a>
+    {% endfor %}
+</div>

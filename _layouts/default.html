@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ page.lang }}">
+<html lang="{{ page.content_lang | default: page.lang }}">
 {% include head.html %}
 <body>
     <a class="skip-link" href="#main">Skip to content</a>

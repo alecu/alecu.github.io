@@ -1,0 +1,21 @@
+# Machines shown in the homepage grid and the restorations page. Add one entry per machine.
+# status: restored | in_progress | soon
+- name: Apple Lisa
+  status: restored
+  owner: My collection
+  summary: Brought back to life, and the stage for a demo that placed second at FlashParty '26.
+  image: img/placeholders/lisa.svg
+  image_alt: Placeholder illustration of an Apple Lisa
+  anchor: apple-lisa
+- name: Virtuality 1000CS
+  status: in_progress
+  owner: EspacioTec
+  summary: An early-90s arcade VR cabinet built around an Amiga 3000. The computer boots again; the headset is next.
+  image: img/placeholders/virtuality.svg
+  image_alt: Placeholder illustration of a VR headset
+  anchor: virtuality-1000cs
+- name: More on the bench
+  status: soon
+  owner: My collection and EspacioTec's
+  summary: A few more machines are being restored. Their stories will show up here.
+  anchor: more-on-the-bench

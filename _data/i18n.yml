@@ -32,6 +32,11 @@ en:
     lede: Talks I've given about Ventilastation and building things. They are in Spanish; the slides are shared by both.
     slides: Slides
     event_page: Event page
+  restorations:
+    restored: Restored
+    in_progress: In progress
+    soon: On the bench
+    owner: Belongs to
   languages:
     es: Spanish
     en: English
@@ -50,3 +55,6 @@ en:
     previous: Previous post
     next: Next post
     related: Part of
+    original: This article was first published, in Spanish, on
+    original_link: Read the original
+    in_language: Written in

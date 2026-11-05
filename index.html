@@ -31,16 +31,10 @@ description: "Community and volunteer projects from Argentina: electromechanical
     </ol>
 </section>
 
-<section class="wrap home-section">
+<section class="wrap home-section" id="restorations">
     <h2>{{ t.home.restorations }}</h2>
-    <div class="split">
-        <a href="{{ lisa.url | prepend: site.baseurl }}"><img class="split__img" src="{{ lisa.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ lisa.image_alt }}" loading="lazy"></a>
-        <div>
-            <h3>Apple Lisa</h3>
-            <p>An Apple Lisa from my collection, brought back to life, and the demo I wrote to celebrate: second place at FlashParty '26.</p>
-            <p><a class="button" href="{{ lisa.url | prepend: site.baseurl }}">{{ t.home.more }}</a></p>
-        </div>
-    </div>
+    {% include machine-grid.html %}
+    <p><a href="{{ lisa.url | prepend: site.baseurl }}">{{ t.home.more }} &rarr;</a></p>
 </section>
 
 <section class="wrap home-section" id="demos">

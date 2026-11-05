@@ -1,0 +1,4 @@
+{% comment %} Click-to-load emulator. Pass `src`, `poster` and `title`. js/video.js swaps the button for the iframe. {% endcomment %}
+<div class="embed">
+    <button type="button" data-embed="{{ include.src }}" style="background-image:url('{{ include.poster | prepend: '/' | prepend: site.baseurl }}')" aria-label="Play {{ include.title }}"></button>
+</div>

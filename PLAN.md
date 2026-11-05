@@ -10,7 +10,8 @@ Decisions so far:
 - Framing: "community and volunteer projects". Name the groups (Club de Jaqueo, Megajuegos, EspacioTec).
 - Old Snappy posts move to an Archive and stay out of the main blog and the homepage.
 - Reflektor links to `http://reflektor.protocultura.net/` (currently redirects to the post on this blog; adjust later if the blog layout changes).
-- One restoration project is **not public yet**. Nothing about it goes into this repo (it is public) until alecu says so. Private notes live in `.private/`, which git ignores.
+- The Virtuality 1000CS restoration (EspacioTec) is now public on the site, on the same footing as the Apple Lisa. Longer private notes live in `.private/`, which git ignores; only what alecu approves goes into the repo.
+- Restorations are data-driven (`_data/restorations.yml`: name, status, owner, summary) so more machines can be added as cards. A "More on the bench" placeholder card holds the space for the machines alecu is still working on.
 
 ## Projects
 
@@ -22,7 +23,7 @@ Main (cards above the fold):
 | Super Ventilagon | https://ventilagon.protocultura.net/ | The original game that grew into Ventilastation (2015). |
 | Reflektor | http://reflektor.protocultura.net/ | First electromechanical game (2013). |
 | Megajuegos | https://www.megajuegos.com.ar/ | Founded and led by alecu, 2016-2022. |
-| Restorations | `/projects/restorations/` | Apple Lisa (alecu's collection) and restorations for EspacioTec. |
+| Restorations | `/projects/restorations/` | Apple Lisa (alecu's collection), Virtuality 1000CS (EspacioTec, in progress), more on the bench. EspacioTec is explained and linked: https://espaciotec.com.ar/ |
 
 Smaller (demos and tools):
 
@@ -41,7 +42,9 @@ What each talk covers, from the event pages: the Nerdearla talk is about designi
 
 The first talk is the Nerdearla talk the Ventilastation site already lists, so it is not a third talk. Both talks used the same slides, `dump2024` ("The history and future of Ventilastation"), published at https://ventilastation.protocultura.net/dump2024/ (source: https://github.com/ventilastation/dump2024). Both talk entries link to them as `slides`.
 
-Not shown yet: other unannounced work. Private notes live in `.private/`.
+Writing republished from elsewhere:
+
+- "Festejando la democracia" (EspacioTec blog, 9 July 2025, in Spanish): full text, pictures and the playable Spectrum emulator (https://alecu.protocultura.net/raze-etec/), with a notice and link to the original (https://blog.espaciotec.com.ar/festejando-la-democracia/). Its canonical URL points at the original.
 
 ## Information architecture
 
@@ -96,12 +99,13 @@ Written as retrospective posts, drafted from repos, commit history, docs and ale
 
 1. Ventilastation: path from Ventilagon, ESP32 with 107 LEDs at 600 RPM, slip ring, MicroPython and the VS2 API, the IndieMash win, the two talks (the shared `dump2024` slides are a source).
 2. Apple Lisa restoration: multi-part series (ProFile and ESProFile storage, the Alisando demo).
+   Virtuality 1000CS restoration: series from the restoration log, with photos (notes in `.private/virtuality-notes.md`).
 3. Super Ventilagon: POV display, Wixel link, press coverage.
 4. Megajuegos 2016-2022: founding, adapting *Vigilen los Cielos*, building *Independencia*, running 50+ player games, funding for school cooperadoras. Needs alecu's input.
 5. Reflektor making-of: beyond the existing post.
 6. Demos: Vlad Farty, Alisando el Camino, numsid.
 7. Talk companions (optional): a short post per talk with the summary, slides and links, which also gives non-Spanish readers something to read.
-8. Unannounced restorations: drafted privately in `.private/`, published only after the announcement.
+8. The other machines on the bench, once alecu names them.
 
 ## Phases
 
@@ -119,4 +123,5 @@ Written as retrospective posts, drafted from repos, commit history, docs and ale
 - Matching photos, after the texts are approved.
 - Talks: the exact Nerdearla date, if you want it shown.
 - Confirmation of facts that can't be read online: Megajuegos history and the Lisa restoration timeline.
-- Go-ahead before any unannounced work becomes public.
+- The names and status of the other machines being restored.
+- Photos for the Virtuality and Lisa cards, after the texts are approved.
