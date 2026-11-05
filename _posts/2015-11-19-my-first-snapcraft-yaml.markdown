@@ -1,5 +1,6 @@
 ---
 layout: post
+archive: true
 title:  "My first snapcraft.yaml"
 date:   2015-11-19 10:00:00
 categories: snappy raspi snapcraft

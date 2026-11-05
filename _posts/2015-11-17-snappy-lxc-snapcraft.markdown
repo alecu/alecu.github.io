@@ -1,5 +1,6 @@
 ---
 layout: post
+archive: true
 title:  "How to set up snapcraft inside a container running on Ubuntu Core"
 date:   2015-11-17 10:00:00
 categories: snappy raspi snapcraft

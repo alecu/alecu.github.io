@@ -1,5 +1,6 @@
 ---
 layout: post
+archive: true
 title:  "How to boot a Raspberry Pi 2 with the snappy Ubuntu Core"
 date:   2015-11-16 10:00:00
 categories: snappy raspi

@@ -1,5 +1,6 @@
 ---
 layout: post
+archive: true
 title:  "How I built the snap packages for my snappy demo using snapcraft"
 date:   2015-11-18 10:00:00
 categories: snappy raspi snapcraft

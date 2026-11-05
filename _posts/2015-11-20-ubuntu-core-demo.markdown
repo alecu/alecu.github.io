@@ -1,5 +1,6 @@
 ---
 layout: post
+archive: true
 title:  "Playing with Arduino, Raspberry Pi2, Snappy Ubuntu Core, Webgl and Websockets"
 date:   2015-11-20 10:00:00
 categories: snappy arduino raspi webgl websockets

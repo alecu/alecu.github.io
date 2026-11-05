@@ -1,0 +1,10 @@
+{% comment %}
+  Click-to-load emulator. Pass `src`, `poster` and `title`, plus the page size the emulator
+  needs (`width`, `height`; defaults fit RAZE). js/video.js swaps the button for the iframe
+  and scales it to the width of the column.
+{% endcomment %}
+{% assign w = include.width | default: 814 %}
+{% assign h = include.height | default: 616 %}
+<div class="embed" style="aspect-ratio: {{ w }} / {{ h }}">
+    <button type="button" data-embed="{{ include.src }}" data-embed-width="{{ w }}" data-embed-height="{{ h }}" style="background-image:url('{{ include.poster | prepend: '/' | prepend: site.baseurl }}')" aria-label="Play {{ include.title }}"></button>
+</div>

@@ -1,0 +1,16 @@
+---
+layout: default
+title: "Talks"
+description: "Talks I've given about Ventilastation and building things."
+permalink: /talks/
+---
+{% assign t = site.data.i18n[page.lang] %}
+<section class="wrap prose-wrap--wide">
+    <h1 class="page-title">{{ t.talks.title }}</h1>
+    <p class="page-lede">{{ t.talks.lede }}</p>
+    <div class="talk-grid">
+        {% for talk in site.data.talks %}
+        {% include talk-card.html talk=talk %}
+        {% endfor %}
+    </div>
+</section>

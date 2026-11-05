@@ -1,0 +1,8 @@
+---
+layout: page
+title: "Archive"
+description: "Older writing, kept online."
+permalink: /archive/
+---
+{% assign posts = site.posts | where: "archive", true %}
+{% include post-list.html posts=posts %}

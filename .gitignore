@@ -1,2 +1,6 @@
 _site
 node_modules
+vendor
+.bundle
+.jekyll-cache
+Gemfile.lock

@@ -1,0 +1,4 @@
+{% comment %} Click-to-load YouTube player. Pass `id` and `title`. js/video.js swaps the button for the iframe. {% endcomment %}
+<div class="demo__video">
+    <button type="button" data-youtube="{{ include.id }}" style="background-image:url('https://i.ytimg.com/vi/{{ include.id }}/hqdefault.jpg')" aria-label="Play {{ include.title }}"></button>
+</div>

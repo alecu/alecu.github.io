@@ -1,0 +1,13 @@
+- title: Vlad Farty
+  youtube: Qut9HRcUoM0
+  award: "1st place · FlashParty '23 · oldskool demo"
+  text: A demo for the Ventilastation console.
+- title: Alisando el Camino
+  youtube: NqTfBPqbfzc
+  award: "2nd place · FlashParty '26 · oldskool demo"
+  text: A demo running on an Apple Lisa I restored.
+- title: numsid
+  youtube: QAMZvv-m03c
+  award: Python · no emulation libraries
+  text: A Commodore 64 SID, Amiga MOD and MIDI player, with the 6502 CPU and the SID chip emulated from scratch.
+  link: https://github.com/alecu/numsid
