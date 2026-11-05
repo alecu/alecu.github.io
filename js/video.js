@@ -21,6 +21,8 @@ document.querySelectorAll('[data-youtube], [data-embed]').forEach(function (butt
             frame.src = button.dataset.embed;
             frame.allow = 'autoplay; fullscreen; gamepad';
             frame.scrolling = 'no';
+            // Give the emulator the keyboard, so the arrow keys play instead of scrolling the page.
+            frame.addEventListener('load', function () { frame.focus(); });
             fitEmulator(frame, button.parentNode, Number(button.dataset.embedWidth), Number(button.dataset.embedHeight));
         }
         frame.title = button.getAttribute('aria-label').replace('Play ', '');

@@ -56,11 +56,11 @@ Guille había encontrado que el juego de Alfonsín había salido en Programació
 
 En cuanto tuve un ratito libre, tras unos meses de intenso ventiladoreo, puse manos a la obra. Y tras un par de noches mal dormidas, y alguna otra noche más de debuggeo pude volver a tipear el juego que, esta vez sí, voy a dejar subido a [archive.org](https://archive.org) para que sea mucho más fácil volverlo a jugar. Les presento “Alfonsín” de José Ricardo Maicas, el programa del mes de Febrero de 1986 y ganador del premio de ₳25 (¡veinticinco australes!):
 
-{% include emulator-embed.html src="https://alecu.protocultura.net/raze-etec/?48k=Y&snapshot=alfonsin.z80" poster="img/festejando-la-democracia/alfonsin-game.png" title="Alfonsín (ZX Spectrum)" %}
+{% include emulator-embed.html src="https://alecu.protocultura.net/raze-etec/?48k=Y&snapshot=alfonsin.z80&cursor=protek" poster="img/festejando-la-democracia/alfonsin-game.png" title="Alfonsín (ZX Spectrum)" %}
 
-Hacé clic en la imagen para cargar el emulador, y otra vez en la pantalla para empezar a jugar.
+Hacé clic en la imagen para cargar el emulador, y otra vez en la pantalla para empezar a jugar. Las flechas del teclado funcionan como las teclas 5 (izquierda), 6 (abajo), 7 (arriba) y 8 (derecha), que son las que usa el juego.
 
-[Jugar a pantalla completa](https://alecu.protocultura.net/raze-etec/?48k=Y&snapshot=alfonsin.z80) · [archivo .tap con el código](https://alecu.protocultura.net/raze-etec/alfonsin.tap)
+[Jugar a pantalla completa](https://alecu.protocultura.net/raze-etec/?48k=Y&snapshot=alfonsin.z80&cursor=protek) · [archivo .tap con el código](https://alecu.protocultura.net/raze-etec/alfonsin.tap)
 
 Ya miramos para atrás, ahora miremos para adelante, e imaginemos alguna web de EspacioTec con las páginas de esas revistas, y un botón en cada una donde se puedan descargar los juegos o mismo jugar online. Tal vez con un esfuerzo colaborativo logramos entre todos tipear los mejores juegos de las revistas argentinas de la época y preservar un poquito más nuestra historia.
 
