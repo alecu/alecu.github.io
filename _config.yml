@@ -1,21 +1,49 @@
-# Site settings
 title: alecu
-header-img: img/reflektor-full.jpg
-email: alecu@protocultura.net
 description: "Retrofuturismo con alecu"
+lang: en
+email: alecu@protocultura.net
+url: "https://alecu.protocultura.net"
 baseurl: ""
-url: "http://alecu.protocultura.net"
+
 twitter_username: alecura
-github_username:  alecu
-linkedin_username:  alecura
-launchpad_username:  alecu
-#facebook_username:  IronSummitMedia
+github_username: alecu
+linkedin_username: alecura
+launchpad_username: alecu
+instagram_username: alecura83
 
-# Build settings
 markdown: kramdown
-highlighter: pygments
+highlighter: rouge
 permalink: pretty
-paginate: 10
-exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
 
-theme: jekyll-theme-cayman
+plugins:
+  - jekyll-seo-tag
+  - jekyll-redirect-from
+
+collections:
+  projects:
+    output: true
+    permalink: /projects/:name/
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      lang: en
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+  - scope:
+      path: ""
+      type: projects
+    values:
+      layout: project
+
+exclude:
+  - PLAN.md
+  - Gemfile
+  - Gemfile.lock
+  - scripts
+  - vendor
+  - node_modules

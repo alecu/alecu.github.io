@@ -1,0 +1,14 @@
+{% comment %} Pass `talk` (an entry from _data/talks.yml). {% endcomment %}
+{% assign t = site.data.i18n[page.lang] %}
+<article class="demo">
+    {% include video-embed.html id=include.talk.youtube title=include.talk.title %}
+    <div class="demo__body">
+        <span class="demo__award">{{ include.talk.event }}{% if include.talk.when %} &middot; {{ include.talk.when }}{% endif %}{% if include.talk.lang != page.lang %} &middot; {{ t.languages[include.talk.lang] }}{% endif %}</span>
+        <h3>{{ include.talk.title }}</h3>
+        <p>{{ include.talk.text }}</p>
+        <p class="demo__links">
+            {% if include.talk.slides %}<a href="{{ include.talk.slides }}">{{ t.talks.slides }}</a>{% endif %}
+            {% if include.talk.event_url %}<a href="{{ include.talk.event_url }}">{{ t.talks.event_page }}</a>{% endif %}
+        </p>
+    </div>
+</article>

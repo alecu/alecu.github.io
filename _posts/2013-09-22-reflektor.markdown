@@ -1,5 +1,6 @@
 ---
 layout: post
+project: reflektor
 title:  "РЕФЛЕКТОР (reflektor) en el Museo del Juguete San Isidro"
 date:   2013-09-22 10:00:00
 categories: arduino electromechanical games reflektor

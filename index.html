@@ -1,36 +1,77 @@
 ---
-layout: page
-description: "Ubuntu, Python and Electromechanical Games"
+layout: default
+title: "alecu"
+description: "Community and volunteer projects from Argentina: electromechanical games, tabletop megagames and vintage computer restorations."
 ---
+{% assign t = site.data.i18n[page.lang] %}
+{% assign projects = site.projects | sort: "order" %}
+{% assign posts = site.posts | where_exp: "p", "p.archive != true" %}
+{% assign lisa = site.projects | where: "slug", "restorations" | first %}
 
-{% for post in paginator.posts %}
-<div class="post-preview">
-    <a href="{{ post.url | prepend: site.baseurl }}">
-        <h2 class="post-title">            {{ post.title }}
-        </h2>
-        {% if post.subtitle %}
-        <h3 class="post-subtitle">
-            {{ post.subtitle }}
-        </h3>
-        {% endif %}
-    </a>
-    <p class="post-meta">Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}</p>
-</div>
-<hr>
-{% endfor %}
+<section class="wrap home-hero">
+    <p class="eyebrow">{{ t.home.kicker }}</p>
+    <h1>{{ t.home.headline }}</h1>
+    <p>{{ t.home.intro }}</p>
+</section>
 
-<!-- Pager -->
-{% if paginator.total_pages > 1 %}
-<ul class="pager">
-    {% if paginator.previous_page %}
-    <li class="previous">
-        <a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr; Newer Posts</a>
-    </li>
-    {% endif %}
-    {% if paginator.next_page %}
-    <li class="next">
-        <a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Older Posts &rarr;</a>
-    </li>
-    {% endif %}
-</ul>
-{% endif %}
+<section class="wrap" id="projects" aria-label="{{ t.home.projects }}">
+    <div class="project-grid">
+        {% for project in projects %}
+        {% include project-card.html project=project featured=forloop.first %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="wrap home-section">
+    <h2>{{ t.home.lineage }}</h2>
+    <ol class="lineage">
+        <li><strong>2013</strong><a href="{{ '/projects/reflektor/' | prepend: site.baseurl }}">Reflektor</a><span>Mirrors, a laser and Meccano.</span></li>
+        <li><strong>2015</strong><a href="{{ '/projects/ventilagon/' | prepend: site.baseurl }}">Super Ventilagon</a><span>A game on a spinning fan.</span></li>
+        <li><strong>Now</strong><a href="{{ '/projects/ventilastation/' | prepend: site.baseurl }}">Ventilastation</a><span>A console for circular games.</span></li>
+    </ol>
+</section>
+
+<section class="wrap home-section">
+    <h2>{{ t.home.restorations }}</h2>
+    <div class="split">
+        <a href="{{ lisa.url | prepend: site.baseurl }}"><img class="split__img" src="{{ lisa.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ lisa.image_alt }}" loading="lazy"></a>
+        <div>
+            <h3>Apple Lisa</h3>
+            <p>An Apple Lisa from my collection, brought back to life, and the demo I wrote to celebrate: second place at FlashParty '26.</p>
+            <p><a class="button" href="{{ lisa.url | prepend: site.baseurl }}">{{ t.home.more }}</a></p>
+        </div>
+    </div>
+</section>
+
+<section class="wrap home-section" id="demos">
+    <h2>{{ t.home.demos }}</h2>
+    <div class="demo-grid">
+        {% for demo in site.data.demos %}
+        <article class="demo">
+            {% include video-embed.html id=demo.youtube title=demo.title %}
+            <div class="demo__body">
+                <span class="demo__award">{{ demo.award }}</span>
+                <h3>{{ demo.title }}</h3>
+                <p>{{ demo.text }}{% if demo.link %} <a href="{{ demo.link }}">Source</a>{% endif %}</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="wrap home-section" id="talks">
+    <h2>{{ t.home.talks }}</h2>
+    <div class="talk-grid">
+        {% for talk in site.data.talks limit: 2 %}
+        {% include talk-card.html talk=talk %}
+        {% endfor %}
+    </div>
+    <p><a href="{{ '/talks/' | prepend: site.baseurl }}">{{ t.home.all_talks }} &rarr;</a></p>
+</section>
+
+<section class="wrap home-section">
+    <h2>{{ t.home.writing }}</h2>
+    {% include post-list.html posts=posts limit=3 %}
+    <p><a href="{{ '/blog/' | prepend: site.baseurl }}">{{ t.home.all_posts }} &rarr;</a></p>
+</section>
+

@@ -1,0 +1,54 @@
+---
+layout: default
+---
+{% assign t = site.data.i18n[page.lang] %}
+{% assign related_posts = site.posts | where: "project", page.slug %}
+{% assign related_talks = site.data.talks | where: "project", page.slug %}
+<article>
+    <header class="project-hero">
+        <img class="project-hero__img" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ page.image_alt }}">
+        <div class="wrap project-hero__body">
+            <p class="eyebrow"><a href="{{ site.baseurl }}/#projects">&larr; {{ t.project.back }}</a> &middot; {{ page.years }}</p>
+            <h1 class="page-title">{{ page.title }}</h1>
+            <p class="page-lede">{{ page.tagline }}</p>
+            {% if page.badge %}<p><span class="badge">{{ page.badge }}</span></p>{% endif %}
+        </div>
+    </header>
+
+    <div class="wrap prose-wrap">
+        <div class="prose">
+            {{ content }}
+        </div>
+
+        {% if page.links %}
+        <section class="project-section">
+            <h2>{{ t.project.links }}</h2>
+            <ul class="link-list">
+                {% for link in page.links %}
+                <li><a href="{{ link.url }}">{{ link.label }}</a></li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        {% if related_talks.size > 0 %}
+        <section class="project-section">
+            <h2>{{ t.project.talks }}</h2>
+            <div class="talk-grid talk-grid--stack">
+                {% for talk in related_talks %}
+                {% include talk-card.html talk=talk %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="project-section">
+            <h2>{{ t.project.writing }}</h2>
+            {% if related_posts.size > 0 %}
+            {% include post-list.html posts=related_posts %}
+            {% else %}
+            <p class="muted">{{ t.project.no_writing }}</p>
+            {% endif %}
+        </section>
+    </div>
+</article>

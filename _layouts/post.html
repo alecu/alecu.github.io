@@ -1,52 +1,27 @@
 ---
 layout: default
 ---
-
-<!-- Post Header -->
-<header class="intro-header" style="background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}')">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="post-heading">
-                    <h1>{{ page.title }}</h1>
-                    {% if page.subtitle %}
-                    <h2 class="subheading">{{ page.subtitle }}</h2>
-                    {% endif %}
-                    {% comment %}
-                    <span class="meta">Posted by {% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %} on {{ page.date | date: "%B %-d, %Y" }}</span>
-                    {% endcomment %}
-                </div>
-            </div>
-        </div>
+{% assign t = site.data.i18n[page.lang] %}
+<article class="wrap prose-wrap">
+    <header class="post-header">
+        <p class="eyebrow">
+            {{ page.date | date: "%B %-d, %Y" }}
+            {% if page.project %}
+            {% assign related = site.projects | where: "slug", page.project | first %}
+            {% if related %}&middot; {{ t.post.related }} <a href="{{ related.url | prepend: site.baseurl }}">{{ related.title }}</a>{% endif %}
+            {% endif %}
+        </p>
+        <h1 class="page-title">{{ page.title }}</h1>
+        {% if page.subtitle %}<p class="page-lede">{{ page.subtitle }}</p>{% endif %}
+    </header>
+    {% if page.header-img %}
+    <img class="post-hero" src="{{ page.header-img | prepend: '/' | prepend: site.baseurl }}" alt="">
+    {% endif %}
+    <div class="prose">
+        {{ content }}
     </div>
-</header>
-
-<!-- Post Content -->
-<article>
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-
-				{{ content }}
-
-                <hr>
-
-                <ul class="pager">
-                    {% if page.previous.url %}
-                    <li class="previous">
-                        <a href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.previous.title}}">&larr; Previous Post</a>
-                    </li>
-                    {% endif %}
-                    {% if page.next.url %}
-                    <li class="next">
-                        <a href="{{ page.next.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.next.title}}">Next Post &rarr;</a>
-                    </li>
-                    {% endif %}
-                </ul>
-
-            </div>
-        </div>
-    </div>
+    <nav class="pager" aria-label="Posts">
+        {% if page.previous.url %}<a class="pager__prev" href="{{ page.previous.url | prepend: site.baseurl }}">&larr; {{ page.previous.title }}</a>{% endif %}
+        {% if page.next.url %}<a class="pager__next" href="{{ page.next.url | prepend: site.baseurl }}">{{ page.next.title }} &rarr;</a>{% endif %}
+    </nav>
 </article>
-
-<hr>

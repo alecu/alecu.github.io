@@ -1,0 +1,52 @@
+# UI strings, keyed by language code. Add `es:` here when the Spanish pass starts.
+en:
+  nav:
+    projects: Projects
+    restorations: Restorations
+    talks: Talks
+    blog: Blog
+    about: About
+  home:
+    kicker: Alejandro J. Cura
+    headline: Retrofuturismo con alecu
+    intro: >-
+      Community and volunteer projects from Argentina: electromechanical games,
+      tabletop megagames and vintage computer restorations, all built in the open.
+    projects: Projects
+    lineage: How it connects
+    restorations: Restorations
+    demos: Demos and small projects
+    talks: Talks
+    all_talks: All talks
+    writing: Latest writing
+    all_posts: All posts
+    more: Read more
+  project:
+    links: Links
+    writing: Writing about this
+    no_writing: Posts about this project are on the way.
+    back: All projects
+    talks: Talks about this
+  talks:
+    title: Talks
+    lede: Talks I've given about Ventilastation and building things. They are in Spanish; the slides are shared by both.
+    slides: Slides
+    event_page: Event page
+  languages:
+    es: Spanish
+    en: English
+  blog:
+    title: Blog
+    description: Notes on building and restoring things.
+    archive_note: Older posts, from when I wrote mostly about Ubuntu and Python, live in the
+    archive_link: archive
+  archive:
+    title: Archive
+    description: Older writing, kept online.
+  footer:
+    license: Text and images are licensed under
+    feed: RSS feed
+  post:
+    previous: Previous post
+    next: Next post
+    related: Part of

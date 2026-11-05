@@ -1,0 +1,12 @@
+{% comment %}
+  Card for a project. Pass `project` (a document from site.projects) and optionally `featured`.
+{% endcomment %}
+<a class="project-card{% if include.featured %} project-card--featured{% endif %}" href="{{ include.project.url | prepend: site.baseurl }}">
+    <img class="project-card__img" src="{{ include.project.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ include.project.image_alt }}" loading="{% if include.featured %}eager{% else %}lazy{% endif %}">
+    <span class="project-card__body">
+        {% if include.project.badge %}<span class="badge">{{ include.project.badge }}</span>{% endif %}
+        <span class="project-card__meta">{{ include.project.years }}</span>
+        <span class="project-card__title">{{ include.project.title }}</span>
+        <span class="project-card__tagline">{{ include.project.tagline }}</span>
+    </span>
+</a>

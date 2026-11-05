@@ -1,0 +1,9 @@
+{% comment %} Pass `posts`, and optionally `limit`. {% endcomment %}
+<ul class="post-list">
+    {% for post in include.posts limit: include.limit %}
+    <li>
+        <a class="post-list__title" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+        <span class="post-list__date">{{ post.date | date: "%B %-d, %Y" }}</span>
+    </li>
+    {% endfor %}
+</ul>

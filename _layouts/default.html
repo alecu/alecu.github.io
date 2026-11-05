@@ -1,16 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="{{ page.lang }}">
 {% include head.html %}
-
 <body>
-
-    {% include nav.html %}
-
-    {{ content }}
-
+    <a class="skip-link" href="#main">Skip to content</a>
+    {% include header.html %}
+    <main id="main">
+        {{ content }}
+    </main>
     {% include footer.html %}
-
+    <script src="{{ '/js/video.js' | prepend: site.baseurl }}" defer></script>
 </body>
-
 </html>

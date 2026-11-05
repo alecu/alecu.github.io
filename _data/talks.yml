@@ -1,0 +1,18 @@
+# Newest first. `project` is the slug of a file in _projects/, so the talk also shows on that project's page.
+- title: Videojuegos en un Ventilador
+  event: Nerdearla Buenos Aires 2025
+  event_url: https://nerdearla.com/nerdflix/Kwif1NEeSZU/
+  lang: es
+  youtube: Kwif1NEeSZU
+  project: ventilastation
+  slides: https://ventilastation.protocultura.net/dump2024/
+  text: Designing and building the first open source, open hardware video game console made in Latin America, which runs inside a fan, and the highs and lows of an amateur hardware project.
+- title: Juegos en un ventilador con MicroPython
+  event: PyDay Hurlingham 2024
+  event_url: https://eventos.python.org.ar/events/pyday-hurlingham-2024/
+  when: October 26, 2024
+  lang: es
+  youtube: 8yWTWJdrpBc
+  project: ventilastation
+  slides: https://ventilastation.protocultura.net/dump2024/
+  text: Ventilastation, its history and how it works, and how to use MicroPython to write your own games for it.
