@@ -272,3 +272,4 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 .bench__name { font-weight: 700; }
 .bench__year { font: .75rem var(--font-mono); color: var(--accent); margin-left: 6px; }
 .bench__summary { font-size: .9rem; color: var(--muted); }
+.bench__owner { font: .72rem var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }

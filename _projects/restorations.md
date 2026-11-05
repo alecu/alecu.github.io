@@ -30,13 +30,13 @@ These are the first milestones from the restoration log. Photos and a proper wri
 
 ## On the bench
 
-More machines are being restored, for my collection and for the museum. Their stories will show up here as they come back to life.
+More machines are being restored: four for my collection and one for the museum. Their stories will show up here as they come back to life.
 
-- **TRS-80 Model III** (1980): Tandy's all-in-one Z80 computer, with the monitor built in.
-- **Commodore SX-64** (1983): a portable Commodore 64 with a built-in colour screen and disk drive.
-- **Amstrad CPC 464** (1984): a Z80 home computer with a built-in cassette deck.
-- **BBC Micro Model B** (1981): Acorn's 6502 computer, a fixture of British classrooms.
-- **Oric Atmos** (1984): Oric's 6502 home computer, the successor of the Oric-1.
+- **TRS-80 Model III** (1980), my collection: Tandy's all-in-one Z80 computer, with the monitor built in.
+- **Commodore SX-64** (1983), my collection: a portable Commodore 64 with a built-in colour screen and disk drive.
+- **Amstrad CPC 464** (1984), my collection: a Z80 home computer with a built-in cassette deck.
+- **BBC Micro Model B** (1981), EspacioTec: Acorn's 6502 computer, a fixture of British classrooms.
+- **Oric Atmos** (1984), my collection: Oric's 6502 home computer, the successor of the Oric-1.
 
 ## EspacioTec
 

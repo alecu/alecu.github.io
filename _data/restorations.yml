@@ -16,22 +16,27 @@
   anchor: virtuality-1000cs
 # Machines without an image are listed compactly under "On the bench". Add `image` for a full card.
 - name: TRS-80 Model III
+  owner: My collection
   status: in_progress
   year: 1980
   summary: Tandy's all-in-one Z80 computer, with the monitor built in.
 - name: Commodore SX-64
+  owner: My collection
   status: in_progress
   year: 1983
   summary: A portable Commodore 64 with a built-in colour screen and disk drive.
 - name: Amstrad CPC 464
+  owner: My collection
   status: in_progress
   year: 1984
   summary: A Z80 home computer with a built-in cassette deck.
 - name: BBC Micro Model B
+  owner: EspacioTec
   status: in_progress
   year: 1981
   summary: Acorn's 6502 computer, a fixture of British classrooms.
 - name: Oric Atmos
+  owner: My collection
   status: in_progress
   year: 1984
   summary: Oric's 6502 home computer, the successor of the Oric-1.

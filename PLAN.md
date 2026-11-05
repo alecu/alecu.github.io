@@ -123,5 +123,5 @@ Written as retrospective posts, drafted from repos, commit history, docs and ale
 - Matching photos, after the texts are approved.
 - Talks: the exact Nerdearla date, if you want it shown.
 - Confirmation of facts that can't be read online: Megajuegos history and the Lisa restoration timeline.
-- For each machine on the bench: status, whether it is yours or EspacioTec's, and a photo, so it can become a full card.
+- For each machine on the bench: status and a photo, so it can become a full card. Ownership is settled: the BBC Micro belongs to EspacioTec, the other four to alecu's collection.
 - Photos for the Virtuality and Lisa cards, after the texts are approved.
