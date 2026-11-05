@@ -254,8 +254,10 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 .figure-row figure { margin: 0; }
 .prose figcaption { font-size: .85rem; color: var(--muted); margin-top: 6px; }
 
-.embed { position: relative; aspect-ratio: 4 / 3; background: #000; border-radius: var(--radius); overflow: hidden; margin: 0 0 8px; }
-.embed button, .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; }
+.embed { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; margin: 0 0 8px; }
+.embed button { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; }
+.prose .embed iframe { position: absolute; left: 0; top: 0; max-width: none; aspect-ratio: auto; border: 0; border-radius: 0; }
+.embed.is-playing { background: darkgray; }
 .embed button { cursor: pointer; background: #000 center / cover no-repeat; }
 .embed button::after {
     content: ""; position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px;
