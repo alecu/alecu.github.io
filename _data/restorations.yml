@@ -4,15 +4,17 @@
   status: restored
   owner: My collection
   summary: Brought back to life, and the stage for a demo that placed second at FlashParty '26.
-  image: img/placeholders/lisa.svg
-  image_alt: Placeholder illustration of an Apple Lisa
+  image: img/restorations/apple-lisa.jpg
+  image_position: 45% 50%
+  image_alt: The inside of an Apple Lisa with its main board exposed
   anchor: apple-lisa
 - name: Virtuality 1000CS
   status: in_progress
   owner: EspacioTec
   summary: An early-90s arcade VR cabinet built around an Amiga 3000. The computer boots again; the headset is next.
-  image: img/placeholders/virtuality.svg
-  image_alt: Placeholder illustration of a VR headset
+  image: img/restorations/virtuality-1000cs.jpg
+  image_position: 50% 28%
+  image_alt: Trying on a Virtuality headset at the workbench
   anchor: virtuality-1000cs
 # Machines without an image are listed compactly under "On the bench". Add `image` for a full card.
 - name: TRS-80 Model III

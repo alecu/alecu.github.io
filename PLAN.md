@@ -91,7 +91,7 @@ Mobile stacks the cards with Ventilastation first. Below the fold:
 
 ## Photos
 
-Placeholders for now. Once the texts are approved, alecu exports matching photos from the Google Photos albums (links in `.private/`) and the build script resizes them into `img/`. Originals stay out of the repo.
+The six main pictures are in (project cards, Lisa and Virtuality), resized to at most 1600px into `img/projects/` and `img/restorations/`. Originals stay out of the repo. More photos for the restoration write-ups come with the posts.
 
 ## Blog backlog
 
@@ -120,8 +120,7 @@ Written as retrospective posts, drafted from repos, commit history, docs and ale
 
 ## Still needed from alecu
 
-- Matching photos, after the texts are approved.
 - Talks: the exact Nerdearla date, if you want it shown.
 - Confirmation of facts that can't be read online: Megajuegos history and the Lisa restoration timeline.
 - For each machine on the bench: status and a photo, so it can become a full card. Ownership is settled: the BBC Micro belongs to EspacioTec, the other four to alecu's collection.
-- Photos for the Virtuality and Lisa cards, after the texts are approved.
+- Photos for the machines on the bench, so they can become full cards.

@@ -16,4 +16,4 @@ bundle exec jekyll serve
 - `_projects/` one file per project: front matter drives the homepage cards, the body is the project page.
 - `_posts/` blog posts. `archive: true` moves a post to `/archive/`; `project: <slug>` lists it on that project's page.
 - `_data/demos.yml` the demos section. `_data/i18n.yml` UI strings.
-- `scripts/make_placeholders.py` generates the placeholder images in `img/placeholders/`.
+- `img/projects/` and `img/restorations/` hold the photos, resized to at most 1600px.

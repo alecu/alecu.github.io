@@ -6,7 +6,7 @@ layout: default
 {% assign related_talks = site.data.talks | where: "project", page.slug %}
 <article>
     <header class="project-hero">
-        <img class="project-hero__img" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ page.image_alt }}">
+        <img class="project-hero__img" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ page.image_alt }}"{% if page.image_position %} style="object-position: {{ page.image_position }}"{% endif %}>
         <div class="wrap project-hero__body">
             <p class="eyebrow"><a href="{{ site.baseurl }}/#projects">&larr; {{ t.project.back }}</a> &middot; {{ page.years }}</p>
             <h1 class="page-title">{{ page.title }}</h1>

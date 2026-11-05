@@ -4,8 +4,9 @@ order: 1
 years: Ongoing
 tagline: An open source, open hardware game console built into a spinning fan.
 badge: Ultimate IndieMash 2025 winner
-image: img/placeholders/ventilastation.svg
-image_alt: Placeholder illustration of concentric rings and glowing dots, like a persistence-of-vision display
+image: img/projects/ventilastation.jpg
+image_position: 40% 30%
+image_alt: A child plays a Ventilastation game with a controller while the spinning fan shows the game in lights
 description: An open source, open hardware electromechanical game console for circular video games. Winner of the Ultimate IndieMash 2025.
 links:
   - label: ventilastation.protocultura.net

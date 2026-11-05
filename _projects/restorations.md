@@ -3,8 +3,9 @@ title: Restorations
 order: 5
 years: Ongoing
 tagline: Bringing vintage computers back to life, for my collection and for EspacioTec.
-image: img/placeholders/restorations.svg
-image_alt: Placeholder illustration of a vintage computer front panel with a circuit trace
+image: img/projects/restorations.jpg
+image_position: 50% 28%
+image_alt: A Microdigital TK85 connected to a Grundig television that shows a screen filled with the word ALECU
 description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS, and more on the bench.
 links:
   - label: EspacioTec
@@ -16,11 +17,21 @@ I restore vintage computers: cleaning, replacing worn parts, chasing faults, and
 
 ## Apple Lisa
 
+<figure>
+    <img src="{{ '/img/restorations/apple-lisa.jpg' | prepend: site.baseurl }}" alt="The inside of an Apple Lisa with its main board exposed and test probes attached" loading="lazy">
+    <figcaption>The Lisa's main board on the bench, wired up for testing.</figcaption>
+</figure>
+
 An Apple Lisa from my collection. Once it ran again, I wrote a demo for it: *Alisando el Camino* took second place in the oldskool demo category at FlashParty '26.
 
 Photos and write-ups of the restoration are coming to this page.
 
 ## Virtuality 1000CS
+
+<figure>
+    <img src="{{ '/img/restorations/virtuality-1000cs.jpg' | prepend: site.baseurl }}" alt="Trying on a Virtuality headset and holding its hand controller at the workbench, next to the open Amiga 3000 board" loading="lazy">
+    <figcaption>Trying the Virtuality headset and hand controller at the workbench.</figcaption>
+</figure>
 
 An arcade virtual reality cabinet from the early 1990s, built around a Commodore Amiga 3000. This one belongs to EspacioTec, and I'm restoring it together with the museum's team.
 

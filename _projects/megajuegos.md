@@ -3,8 +3,9 @@ title: Megajuegos
 order: 4
 years: "2016 – 2022"
 tagline: Giant tabletop games for 50+ players. I founded the group and led it.
-image: img/placeholders/megajuegos.svg
-image_alt: Placeholder illustration of a hexagonal game map
+image: img/projects/megajuegos.jpg
+image_position: 50% 60%
+image_alt: Players gather around a giant world map during a megagame, one of them in a horned mask
 description: Megajuegos, an Argentine group that runs strategy and diplomacy games for 50 or more players at once. Founded and led by alecu from 2016 to 2022.
 links:
   - label: megajuegos.com.ar

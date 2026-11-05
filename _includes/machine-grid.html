@@ -2,7 +2,7 @@
 <div class="machine-grid">
     {% for m in site.data.restorations %}{% if m.image %}
     <a class="machine machine--{{ m.status }}" href="{{ '/projects/restorations/' | append: '#' | append: m.anchor | prepend: site.baseurl }}">
-        <img class="machine__img" src="{{ m.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ m.image_alt }}" loading="lazy">
+        <img class="machine__img" src="{{ m.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ m.image_alt }}"{% if m.image_position %} style="object-position: {{ m.image_position }}"{% endif %} loading="lazy">
         <span class="machine__body">
             <span class="machine__status">{{ t.restorations[m.status] }}</span>
             <span class="machine__name">{{ m.name }}</span>
