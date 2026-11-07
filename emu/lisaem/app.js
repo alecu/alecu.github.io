@@ -295,11 +295,11 @@ dropTarget($('screenWrap'), async (fs) => {
 // Disk images and ROMs served by `serve.mjs --media <dir>` (optional).
 (async () => {
   try {
-    const r = await fetch('/media/index.json');
+    const r = await fetch('media/index.json');
     if (!r.ok) return;
     const all = await r.json();
     const roms = all.filter((d) => classify(d.name, d.size) === 'rom'), list = all.filter((d) => classify(d.name, d.size) !== 'rom');
-    const fetchFile = async (d) => new File([await (await fetch('/media/' + encodeURIComponent(d.name))).arrayBuffer()], d.name);
+    const fetchFile = async (d) => new File([await (await fetch('media/' + encodeURIComponent(d.name))).arrayBuffer()], d.name);
     if (roms.length) {
       $('btnFolderRom').hidden = false;
       $('btnFolderRom').addEventListener('click', () => busy($('btnFolderRom'), 'Loading…', async () => takeRom(await Promise.all(roms.map(fetchFile)))));
@@ -463,12 +463,12 @@ async function fetchRom(id) {
   log(`Downloading boot ROM ${r.label} from ${new URL(romCatalog.source).host}…`);
   try {
     const get = async (f) => {
-      const res = await fetch('/rom/' + encodeURIComponent(f.file));
+      const res = await fetch('rom/' + encodeURIComponent(f.file));
       if (!res.ok) throw new Error(await res.text());
       return new File([await res.arrayBuffer()], f.file);
     };
     const [lo, hi] = await Promise.all([get(r.lo), get(r.hi)]);
-    await takeRom([lo, hi], `${r.label} (bitsavers)`);
+    await takeRom([lo, hi], `${r.label} (${new URL(romCatalog.source).host})`);
     return true;
   } catch (e) {
     log(`Could not download the boot ROM: ${e.message}. Disks will boot without one.`);
@@ -481,7 +481,7 @@ $('romChoice').addEventListener('change', showRomNote);
 
 const romReady = (async () => {
   try {
-    const r = await fetch('/rom/index.json');
+    const r = await fetch('rom/index.json');
     if (!r.ok) return;
     romCatalog = await r.json();
     $('romChoice').innerHTML = romCatalog.roms.map((x) => `<option value="${x.id}">${x.label}</option>`).join('');

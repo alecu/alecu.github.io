@@ -1,0 +1,21 @@
+{
+  "default": "H",
+  "source": "https://alecu.protocultura.net/emu/lisaem/rom/",
+  "fetchAllowed": true,
+  "roms": [
+    {
+      "id": "H",
+      "label": "Rev H (2.H)",
+      "status": "verified",
+      "note": "The latest ROM for the Lisa Office System; also fine for MacWorks and Xenix. Boots the Office System here.",
+      "lo": {
+        "file": "341-0176-H.BIN",
+        "sha256": "77a181c4317a6e741775399654f41b70c8b2636a4e2c8b12dd42e763fea00293"
+      },
+      "hi": {
+        "file": "341-0175-H.BIN",
+        "sha256": "f1b791d09eb230e94539e2db6025ea381721dc325c28f75f1adb2217b41477cc"
+      }
+    }
+  ]
+}
