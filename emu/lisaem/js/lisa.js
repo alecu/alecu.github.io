@@ -290,6 +290,9 @@ export class Lisa {
   mouseDown(x, y) { this._c('mouse', null, ['number', 'number', 'number'], [x, y, 1]); }
   mouseUp(x, y) { this._c('mouse', null, ['number', 'number', 'number'], [x, y, -1]); }
 
+  /** Relative mouse motion, in signed COPS counts. */
+  mouseDelta(dx, dy) { return !!this._c('mouse_delta', 'number', ['number', 'number'], [dx, dy]); }
+
   /** Where the guest OS currently has its mouse pointer, in Lisa screen pixels. */
   pointer() {
     const v = this._c('pointer', 'number', [], []) >>> 0;
@@ -402,6 +405,12 @@ export class Lisa {
     const r = Array.from(this.core.HEAPU32.subarray(ptr >> 2, (ptr >> 2) + 19));
     this.core._free(ptr);
     return { d: r.slice(0, 8), a: r.slice(8, 16), pc: r[16], sr: r[17], context: r[18] };
+  }
+
+  /** Run until a PC range and optional SR mask match, without changing guest state. */
+  runUntilPC(start, end = start, { timeoutMs = 10000, srMask = 0, srValue = 0 } = {}) {
+    return this._c('run_until_pc', 'number', ['number','number','number','number','number'],
+                   [start, end, srMask, srValue, Math.round(timeoutMs * 5000)]);
   }
 
   /** Read guest memory as the CPU sees it in an MMU context (1 = normal OS context). */
