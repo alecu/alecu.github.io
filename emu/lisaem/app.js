@@ -565,7 +565,40 @@ function touchTick(now) {
     if ((Math.abs(q.x - t.x) <= 4 && Math.abs(q.y - t.y) <= 4) || now - t.t0 > 400) { lisa.mouseDown(t.x, t.y); t.down = true; t.tDown = now; }
   } else if (t.released && now - t.tDown >= 100) { lisa.mouseUp(t.x, t.y); touch = null; }
 }
+// Captured mouse. The absolute mouse above is for a guest that tracks its own pointer (the Office System and
+// the other OSes the core recognises). A game with its own mouse code (The Sentinel) reads the COPS's relative
+// motion and button itself, and a demo with no mouse code must not be sent any, so for those the pointer is
+// locked to the screen and the host's motion is sent as it comes: counts, with the button as the COPS's own
+// button code (it is not a key, but travels the same way). Esc lets go (the browser's own rule for a locked pointer).
+const COPS_MOUSE_BUTTON = 0x06;
+let locked = false;           // the pointer is locked to the canvas
+let copsDown = false;         // the COPS mouse button is held, so it can be let go if the lock ends first
+const copsButton = (down) => { if (down !== copsDown && lisa) { copsDown = down; lisa.key(COPS_MOUSE_BUTTON, down); } };
+let rest = { x: 0, y: 0 };    // motion smaller than a Lisa pixel, carried to the next event
+const capturing = () => $('captureMouse').checked && !coarse.matches;
+document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === canvas; rest = { x: 0, y: 0 }; if (!locked) copsButton(false); });
+$('captureMouse').checked = store.get('captureMouse', false);
+$('captureNote').hidden = !$('captureMouse').checked;
+$('captureMouse').addEventListener('change', (e) => {
+  store.set('captureMouse', e.target.checked);
+  $('captureNote').hidden = !e.target.checked;
+  if (!e.target.checked && document.pointerLockElement === canvas) document.exitPointerLock();
+});
+function lockedMove(e) {
+  // Lisa pixels per CSS pixel at the middle of the screen, through the display so the aspect and zoom count.
+  const r = canvas.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const a = display.toSource(cx, cy, screenW, screenH), b = display.toSource(cx + 100, cy + 100, screenW, screenH);
+  rest.x += (e.movementX || 0) * (b[0] - a[0]) / 100;
+  rest.y += (e.movementY || 0) * (b[1] - a[1]) / 100;
+  for (let n = 0; n < 8; n++) {                            // one COPS packet carries up to ±127
+    const dx = Math.max(-127, Math.min(127, Math.trunc(rest.x))), dy = Math.max(-127, Math.min(127, Math.trunc(rest.y)));
+    if (!dx && !dy) break;
+    if (!lisa.mouseDelta(dx, dy)) break;                   // the COPS queue is full: keep the rest for the next event
+    rest.x -= dx; rest.y -= dy;
+  }
+}
 canvas.addEventListener('pointermove', (e) => {
+  if (locked && e.pointerType !== 'touch') { if (lisa) lockedMove(e); return; }
   if (e.pointerType === 'touch') { if (touch?.id === e.pointerId && lisa) { const p = lisaXY(e); touch.x = p[0]; touch.y = p[1]; lisa.mouseMove(p[0], p[1]); } return; }
   const p = lisa && lisaXY(e); if (p) lisa.mouseMove(...p);
 });
@@ -578,7 +611,13 @@ canvas.addEventListener('pointerdown', (e) => {
     touch = { id: e.pointerId, x: p[0], y: p[1], t0: performance.now(), down: false, released: false };
     return;
   }
-  canvas.focus(); try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
+  canvas.focus();
+  if (capturing()) {
+    if (!locked) { canvas.requestPointerLock?.()?.catch?.(() => {}); return; }   // the first click locks; it is not sent
+    if (e.button === 0) copsButton(true);
+    return;
+  }
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
   const p = lisa && lisaXY(e); if (p) lisa.mouseDown(...p);
 });
 function touchEnd(e) {
@@ -588,6 +627,7 @@ function touchEnd(e) {
 }
 canvas.addEventListener('pointerup', (e) => {
   if (e.pointerType === 'touch') return touchEnd(e);
+  if (locked) { if (e.button === 0) copsButton(false); return; }
   const p = lisa && lisaXY(e); if (p) lisa.mouseUp(...p);
 });
 canvas.addEventListener('pointercancel', touchEnd);
