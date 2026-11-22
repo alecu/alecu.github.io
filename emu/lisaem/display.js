@@ -32,6 +32,7 @@ uniform vec2 uTexSize;       // framebuffer size in Lisa pixels
 uniform vec2 uOut;           // canvas size in device pixels
 uniform float uCurve, uScan, uGlow, uMask, uVig, uBorder, uEdge; // uBorder: black margin on each side, as a fraction of the canvas
 uniform vec3 uPaper, uInk;
+uniform float uBright;       // the tube's brightness from the Lisa's contrast latch, 0 (off) .. 1
 in vec2 vUV; out vec4 o;
 
 vec2 curve(vec2 uv) {
@@ -86,7 +87,7 @@ void main() {
     sl = mix(1.0, prof, uScan * smoothstep(1.5, 3.5, rows));
   }
 
-  vec3 col = mix(uInk, uPaper, light) * sl;
+  vec3 col = mix(uInk, uPaper, light) * sl * uBright;
 
   if (uMask > 0.0) {                               // aperture grille, faded out when pixels are tiny
     float k = mod(gl_FragCoord.x, 3.0);
@@ -113,6 +114,7 @@ export class Display {
     this.paper = [0.93, 0.945, 0.9];
     this.ink = [0.02, 0.022, 0.02];
     this.frame = null; // last {bits, width, height}
+    this.bright = 1;   // the tube's brightness, from the Lisa's contrast latch
     this.gl = null;
     try { this.gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: true }); } catch { /* fall through */ }
     if (this.gl) this._initGL(); else this.ctx = canvas.getContext('2d');
@@ -136,7 +138,7 @@ export class Display {
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     gl.useProgram(p);
     this.prog = p;
-    this.u = Object.fromEntries(['uTex', 'uTexSize', 'uOut', 'uCurve', 'uScan', 'uGlow', 'uMask', 'uVig', 'uBorder', 'uEdge', 'uPaper', 'uInk']
+    this.u = Object.fromEntries(['uTex', 'uTexSize', 'uOut', 'uCurve', 'uScan', 'uGlow', 'uMask', 'uVig', 'uBorder', 'uEdge', 'uPaper', 'uInk', 'uBright']
       .map((n) => [n, gl.getUniformLocation(p, n)]));
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -177,8 +179,11 @@ export class Display {
     this.redraw();
   }
 
-  /** @param {{bits: Uint8Array, width: number, height: number}} screen packed 1-bpp, MSB leftmost */
-  present(screen) { this.frame = screen; this.redraw(); }
+  /**
+   * @param {{bits: Uint8Array, width: number, height: number}} screen packed 1-bpp, MSB leftmost
+   * @param {number} bright how bright the tube is, 0 (off) .. 1, as the Lisa's contrast latch sets it
+   */
+  present(screen, bright = 1) { this.frame = screen; this.bright = bright; this.redraw(); }
 
   redraw() {
     const f = this.frame;
@@ -205,6 +210,7 @@ export class Display {
     gl.uniform1f(this.u.uEdge, this.edgeSoft);
     gl.uniform3fv(this.u.uPaper, this.paper);
     gl.uniform3fv(this.u.uInk, this.ink);
+    gl.uniform1f(this.u.uBright, this.bright);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -225,7 +231,9 @@ export class Display {
     const W = this.canvas.width, H = this.canvas.height, by = this.border * H, bx = this.border * W;
     this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, W, H);
     this.ctx.imageSmoothingEnabled = false;
+    this.ctx.globalAlpha = this.bright; // over black: dims the picture
     this.ctx.drawImage(this._off, bx, by, W - 2 * bx, H - 2 * by);
+    this.ctx.globalAlpha = 1;
   }
 
   /**

@@ -33,7 +33,8 @@ function setEnabled(on) {
   renderPower();
 }
 
-function drawScreen() { display.present(lisa.screen()); }
+// The picture dims and fades with the Lisa's contrast latch unless the Contrast switch is off.
+function drawScreen() { display.present(lisa.screen(), $('contrast').checked ? lisa.brightness : 1); }
 
 // ---- display settings (remembered per browser) -------------------------------------------
 
@@ -70,6 +71,8 @@ function setPanel(show, persist = true) {
   if (persist) store.set('panel', show);
 }
 $('aspect').addEventListener('change', (e) => { display.setAspect(e.target.value); store.set('aspect', e.target.value); });
+$('contrast').checked = store.get('contrast', true);
+$('contrast').addEventListener('change', (e) => { store.set('contrast', e.target.checked); if (lisa) drawScreen(); });
 $('fxPreset').addEventListener('change', (e) => { if (e.target.value !== 'custom') applyFx(e.target.value, PRESETS[e.target.value]); else applyFx('custom', display.fx); });
 // the edge style is its own choice: changing a preset keeps it
 $('fxEdge').addEventListener('input', (e) => { display.setEffects({ edge: +e.target.value }); showEdge(+e.target.value); store.set('fx', { preset: $('fxPreset').value, fx: display.fx }); });

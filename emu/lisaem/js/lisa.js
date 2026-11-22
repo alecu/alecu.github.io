@@ -398,6 +398,17 @@ export class Lisa {
   /** Screen contrast latch (0 = brightest). */
   get contrast() { return this._c('contrast', 'number', [], []); }
 
+  /**
+   * How bright the tube is, from the contrast latch, 0..1. Software dims and fades the Lisa's display
+   * with this latch: the boot ROM sets $80, the Office System $58, and $ff turns the display off.
+   * 1 at $80 and below, falling evenly to 0 at $ff. Also 1 until the guest first loads the latch, which
+   * starts at $ff: the ROM-less loader never loads it, and the ROM does within a second.
+   */
+  get brightness() {
+    if (!this._c('contrast_latched', 'number', [], [])) return 1;
+    return Math.min(1, (0xff - this.contrast) / (0xff - 0x80));
+  }
+
   /** CPU registers: { d: [8], a: [8], pc, sr, context }. */
   registers() {
     const ptr = this.core._malloc(19 * 4);
