@@ -307,11 +307,13 @@ dropTarget($('screenWrap'), async (fs) => {
   await newMachine(); canvas.focus();
 });
 
-// Disk images and ROMs served by `serve.mjs --media <dir>` (optional).
-(async () => {
+// Disk images and ROMs served by `serve.mjs --media <dir>`, or bundled by build-pages (optional).
+// Resolves to { list, insert(disk) } (an empty list when there is no media folder).
+const media = (async () => {
+  const none = { list: [], insert: async () => {} };
   try {
     const r = await fetch('media/index.json');
-    if (!r.ok) return;
+    if (!r.ok) return none;
     const all = await r.json();
     const roms = all.filter((d) => classify(d.name, d.size) === 'rom'), list = all.filter((d) => classify(d.name, d.size) !== 'rom');
     const fetchFile = async (d) => new File([await (await fetch('media/' + encodeURIComponent(d.name))).arrayBuffer()], d.name);
@@ -319,15 +321,17 @@ dropTarget($('screenWrap'), async (fs) => {
       $('btnFolderRom').hidden = false;
       $('btnFolderRom').addEventListener('click', () => busy($('btnFolderRom'), 'Loading…', async () => takeRom(await Promise.all(roms.map(fetchFile)))));
     }
-    if (!list.length) return;
-    $('localRow').hidden = false;
-    $('localDisks').innerHTML = list.map((d) => `<option value="${d.name}">${d.name} (${fmtSize(d.size)}, ${classify(d.name, d.size) === 'profile' ? 'hard disk' : 'floppy'})</option>`).join('');
-    $('btnInsertLocal').addEventListener('click', () => busy($('btnInsertLocal'), 'Loading…', async () => {
-      const d = list.find((x) => x.name === $('localDisks').value);
+    const insert = async (d) => {
+      $('localDisks').value = d.name;
       const f = await fetchFile(d);
       await (classify(d.name, d.size) === 'profile' ? takeProfile(f) : takeFloppy(f));
-    }));
-  } catch { /* no media server */ }
+    };
+    if (!list.length) return none;
+    $('localRow').hidden = false;
+    $('localDisks').innerHTML = list.map((d) => `<option value="${d.name}">${d.name} (${fmtSize(d.size)}, ${classify(d.name, d.size) === 'profile' ? 'hard disk' : 'floppy'})</option>`).join('');
+    $('btnInsertLocal').addEventListener('click', () => busy($('btnInsertLocal'), 'Loading…', () => insert(list.find((x) => x.name === $('localDisks').value))));
+    return { list, insert };
+  } catch { return none; /* no media server */ }
 })();
 
 // ---- keeping disk changes ---------------------------------------------------------------
@@ -507,6 +511,24 @@ const romReady = (async () => {
     showRomNote();
     if (!rom && $('autoRom').checked && romCatalog.fetchAllowed) await fetchRom(romCatalog.default);
   } catch { /* no ROM endpoint: a statically hosted page */ }
+})();
+
+// ---- a link that opens a disk: ?disk=<name> -----------------------------------------------------------
+//
+// Inserts a disk from the media folder and powers on, once the boot ROM (if any) has arrived. The name is a
+// disk's file name, or any part of it: then the last match by name (numbers compared as numbers) is taken, so
+// ?disk=sentinel stays a good link when a newer build replaces the disk. Only disks in the media folder open.
+
+(async () => {
+  const want = new URLSearchParams(location.search).get('disk');
+  if (!want) return;
+  const { list, insert } = await media;
+  const d = list.find((x) => x.name === want) ?? list.filter((x) => x.name.toLowerCase().includes(want.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).at(-1);
+  if (!d) { log(`The link asks for a disk named “${want}”, which is not in the media folder.`); return; }
+  await romReady;
+  await insert(d);
+  await newMachine();
 })();
 
 // ---- collapsible cards, remembered per browser ------------------------------------------------
