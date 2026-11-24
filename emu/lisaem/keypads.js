@@ -2,6 +2,8 @@
 // says which matter most; the page places the groups beside the screen (phone on its side) or under it.
 //
 // disks: patterns for the floppy names that choose this template.
+// touch: { drag: false } for a program that never drags with the mouse: a tap on the screen then clicks at
+//   once, instead of waiting to see whether a second touch makes it a double-click or a drag.
 // pages: the first page shows first; a button in the key bar steps to the next. A page has either
 //   pad:     arrow keys with one key in the middle, on the left, and
 //   buttons: a grid of keys on the right, `columns` wide; or
@@ -17,6 +19,7 @@ export const TEMPLATES = {
   sentinel: {
     name: 'The Sentinel',
     disks: [/sentinel/i],
+    touch: { drag: false },
     pages: [
       {
         name: 'Play',

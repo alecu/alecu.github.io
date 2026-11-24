@@ -580,20 +580,49 @@ function lisaXY(e) {
   // Through the display so aspect, scaling and CRT curvature are all accounted for.
   return display.toSource(e.clientX, e.clientY, screenW, screenH);
 }
-// A mouse (or pen) was already hovering, so the Lisa's pointer is where it should be when the button goes
-// down. A finger is not: it lands and clicks in one go, and the Lisa's mouse only gets *relative* motion from
-// the COPS, so it needs a moment to catch up. A touch therefore moves the pointer first, presses once the
-// guest's pointer has arrived (or after 400 ms), and holds the button for at least 100 ms.
-let touch = null;           // { id, x, y, t0, down, tDown, released }
+// Touch works like a laptop trackpad with tap-to-click, except that the pointer sits under the finger.
+// Touching and moving (or holding still) only moves the pointer, so a game's sights can be aimed without
+// firing. A quick tap clicks where it lands. Two quick taps double-click, and a tap followed by a touch that
+// moves or stays down presses and drags (an icon, a window, a menu). A lone tap therefore waits a moment to
+// see whether a second touch follows, unless the disk's key template says the program never drags (The
+// Sentinel), when it clicks at once.
+//
+// The Lisa's mouse only gets *relative* motion from the COPS, so the guest's pointer takes a moment to catch
+// up with the finger, and from across the screen that takes the Office System most of a second. Each button
+// change waits for the pointer to arrive (or to stop short of it, for a program that keeps its own pointer),
+// goes to the COPS as its button code, and is held for 100 ms of Lisa time so the guest sees it.
+const TAP_MS = 250, TAP_SLOP = 10, DOUBLE_MS = 300, DOUBLE_SLOP = 30, DRAG_HOLD_MS = 300;   // host ms, CSS px
+const SETTLE_MS = 300, ARRIVE_MAX_MS = 3000, PRESS_MS = 100, GAP_MS = 60;                       // host ms, Lisa ms
+let finger = null;            // the touch on the screen: { id, cx, cy, t0, x, y, moved, second, dragging }
+let lastTap = null;           // a tap waiting to see if a second one follows: { x, y, cx, cy, t }
+const btnQ = [];              // button changes still to send, in order: { down, x, y }
+let btnStep = null;           // the change waiting for the pointer to arrive
+let btnAt = -Infinity;        // Lisa time of the last button change
+let aim = { x: -1, y: -1, t: 0 };   // where the pointer was last sent, and when
+let still = { x: -1, y: -1, t: 0 }; // where the guest's pointer is, and since when it has stayed there
+let follow = null;            // where the finger went while a button change held the pointer still
+const touchDrags = () => TEMPLATES[tpl.id]?.touch?.drag !== false;
+function aimAt(x, y) { if (x !== aim.x || y !== aim.y) { aim = { x, y, t: performance.now() }; lisa.mouseMove(x, y); } }
+function pointTo(x, y) { if (btnStep || btnQ.length) follow = [x, y]; else aimAt(x, y); }
+function click(x, y) { btnQ.push({ down: true, x, y }, { down: false, x, y }); }
+function startDrag() { finger.dragging = true; btnQ.push({ down: true, x: lastTap.x, y: lastTap.y }); lastTap = null; }
 function touchTick(now) {
-  const t = touch;
-  if (!t || !lisa) return;
-  if (!t.down) {
-    const q = lisa.pointer();
-    if ((Math.abs(q.x - t.x) <= 4 && Math.abs(q.y - t.y) <= 4) || now - t.t0 > 400) { lisa.mouseDown(t.x, t.y); t.down = true; t.tDown = now; }
-  } else if (t.released && now - t.tDown >= 100) { lisa.mouseUp(t.x, t.y); touch = null; }
+  if (!lisa) return;
+  if (lastTap && !finger && now - lastTap.t > DOUBLE_MS) { click(lastTap.x, lastTap.y); lastTap = null; }
+  if (finger?.second && !finger.dragging && now - finger.t0 >= DRAG_HOLD_MS) startDrag();   // tap, then hold
+  if (!btnStep && btnQ.length) { btnStep = btnQ.shift(); aimAt(btnStep.x, btnStep.y); }
+  if (btnStep) {
+    const s = btnStep, q = lisa.pointer();
+    if (q.x !== still.x || q.y !== still.y) still = { x: q.x, y: q.y, t: now };
+    const arrived = (Math.abs(q.x - s.x) <= 3 && Math.abs(q.y - s.y) <= 3)
+      || (now - still.t >= SETTLE_MS && now - aim.t >= SETTLE_MS) || now - aim.t >= ARRIVE_MAX_MS;
+    if (!arrived || lisa.time - btnAt < (s.down ? GAP_MS : PRESS_MS)) return;
+    copsButton(s.down); btnAt = lisa.time; btnStep = null;
+    if (btnQ.length) return;
+  }
+  if (follow) { aimAt(...follow); follow = null; }
 }
-// Captured mouse. The absolute mouse above is for a guest that tracks its own pointer (the Office System and
+// Captured mouse. The absolute mouse (a hovering mouse or pen) is for a guest that tracks its own pointer (the Office System and
 // the other OSes the core recognises). A game with its own mouse code (The Sentinel) reads the COPS's relative
 // motion and button itself, and a demo with no mouse code must not be sent any, so for those the pointer is
 // locked to the screen and the host's motion is sent as it comes: counts, with the button as the COPS's own
@@ -627,18 +656,12 @@ function lockedMove(e) {
 }
 canvas.addEventListener('pointermove', (e) => {
   if (locked && e.pointerType !== 'touch') { if (lisa) lockedMove(e); return; }
-  if (e.pointerType === 'touch') { if (touch?.id === e.pointerId && lisa) { const p = lisaXY(e); touch.x = p[0]; touch.y = p[1]; lisa.mouseMove(p[0], p[1]); } return; }
+  if (e.pointerType === 'touch') return touchMove(e);
   const p = lisa && lisaXY(e); if (p) lisa.mouseMove(...p);
 });
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
-  if (e.pointerType === 'touch') {
-    if (!lisa || !e.isPrimary || touch) return;             // one finger at a time
-    try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
-    const p = lisaXY(e); lisa.mouseMove(p[0], p[1]);
-    touch = { id: e.pointerId, x: p[0], y: p[1], t0: performance.now(), down: false, released: false };
-    return;
-  }
+  if (e.pointerType === 'touch') return touchStart(e);
   canvas.focus();
   if (capturing()) {
     if (!locked) { canvas.requestPointerLock?.()?.catch?.(() => {}); return; }   // the first click locks; it is not sent
@@ -648,10 +671,35 @@ canvas.addEventListener('pointerdown', (e) => {
   try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
   const p = lisa && lisaXY(e); if (p) lisa.mouseDown(...p);
 });
+function touchStart(e) {
+  if (!lisa || !e.isPrimary || finger) return;             // one finger at a time
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
+  const [x, y] = lisaXY(e), now = performance.now();
+  const second = !!lastTap && now - lastTap.t <= DOUBLE_MS && Math.hypot(e.clientX - lastTap.cx, e.clientY - lastTap.cy) <= DOUBLE_SLOP;
+  finger = { id: e.pointerId, cx: e.clientX, cy: e.clientY, t0: now, x, y, moved: false, second, dragging: false };
+  if (second) return;                                       // the pointer stays on the first tap until this one is decided
+  if (lastTap) { click(lastTap.x, lastTap.y); lastTap = null; }
+  pointTo(x, y);
+}
+function touchMove(e) {
+  const f = finger;
+  if (f?.id !== e.pointerId || !lisa) return;
+  [f.x, f.y] = lisaXY(e);
+  if (Math.hypot(e.clientX - f.cx, e.clientY - f.cy) > TAP_SLOP) f.moved = true;
+  if (f.second && !f.dragging) { if (!f.moved) return; startDrag(); }   // tap, then drag
+  pointTo(f.x, f.y);
+}
 function touchEnd(e) {
-  if (touch?.id !== e.pointerId) return;
-  if (e.type === 'pointerup') { const p = lisa && lisaXY(e); if (p) { touch.x = p[0]; touch.y = p[1]; } }
-  touch.released = true;                                    // touchTick lets go once the press has been held long enough
+  const f = finger;
+  if (f?.id !== e.pointerId) return;
+  finger = null;
+  if (!lisa) { lastTap = null; return; }
+  if (f.dragging) { btnQ.push({ down: false, x: f.x, y: f.y }); return; }   // drop where the finger left
+  if (e.type !== 'pointerup') { lastTap = null; return; }   // cancelled: no click
+  if (f.second) { click(lastTap.x, lastTap.y); click(lastTap.x, lastTap.y); lastTap = null; return; }   // double-click
+  if (f.moved || performance.now() - f.t0 > TAP_MS) return; // it only pointed
+  if (touchDrags()) lastTap = { x: f.x, y: f.y, cx: f.cx, cy: f.cy, t: performance.now() };
+  else click(f.x, f.y);
 }
 canvas.addEventListener('pointerup', (e) => {
   if (e.pointerType === 'touch') return touchEnd(e);
