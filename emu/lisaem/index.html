@@ -28,13 +28,17 @@
   </header>
 
   <main class="layout">
-    <section class="stage" aria-label="Apple Lisa display">
+    <section class="stage" id="stage" aria-label="Apple Lisa display">
+      <div class="padzone left" id="padLeft" role="group" aria-label="Game keys, left"></div>
       <div class="screen" id="screenWrap">
         <canvas id="screen" width="720" height="500" tabindex="0" aria-label="Lisa screen. Click to capture the keyboard."></canvas>
         <div class="hint" id="hint"><span class="only-fine">Drop a disk image here, or choose one in Controls</span><span class="only-coarse">Tap <b>Controls</b>, choose a disk image, then Power on</span></div>
       </div>
       <div class="keybar" id="keybar" role="toolbar" aria-label="Lisa keys">
         <button id="kbToggle" class="kb wide" aria-pressed="false" title="Show the on-screen keyboard">⌨ Keyboard</button>
+        <select id="kbTemplate" class="kbsel" aria-label="On-screen keys"><option value="">Keys: Standard</option></select>
+        <button id="kbPage" class="kb wide tmplonly" title="Switch the game keys page">123</button>
+        <span class="stdkeys">
         <button class="kb mod" data-mod="command" aria-pressed="false" title="Apple key (hold for the next key)">⌘ Apple</button>
         <button class="kb mod" data-mod="option" aria-pressed="false" title="Option key (hold for the next key)">⌥ Option</button>
         <button class="kb mod" data-mod="shift" aria-pressed="false" title="Shift (hold for the next key)">⇧ Shift</button>
@@ -47,7 +51,9 @@
         <button class="kb" data-key="up" aria-label="Up">↑</button>
         <button class="kb" data-key="down" aria-label="Down">↓</button>
         <button class="kb" data-key="right" aria-label="Right">→</button>
+        </span>
       </div>
+      <div class="padzone right" id="padRight" role="group" aria-label="Game keys, right"></div>
       <textarea id="kbInput" class="kbinput" rows="1" aria-label="Typing on the Lisa keyboard" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="enter"></textarea>
       <p class="kbhelp only-fine" id="kbhelp">Click the screen to type. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> = Apple key, <kbd>Alt</kbd> = Option, <kbd>Esc</kbd> = Clear.</p>
       <p class="kbhelp only-coarse">Tap the screen to click, drag to drag. Double-tap to double-click.</p>

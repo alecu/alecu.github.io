@@ -2,6 +2,7 @@
 import { Lisa, KEYMAP, SCREEN_W, SCREEN_H } from './js/lisa.js';
 import { Display, ASPECTS, PRESETS, EDGES } from './display.js';
 import { idbGet, idbPut, idbDel } from './store.js';
+import { TEMPLATES, templateFor } from './keypads.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('screen');
@@ -19,6 +20,7 @@ let speed = 1;
 let stopped = false;          // machine halted (powered off / fatal)
 let lastTs = 0;
 const held = new Set();       // raw keys currently down
+const tpl = { id: '', page: 0, ready: false };   // the on-screen key template in use, see keypads.js
 
 // ---- small helpers ----------------------------------------------------------------------
 
@@ -246,6 +248,7 @@ function renderSlots() {
     $(sizeId).textContent = m && size ? size(m) : '';
   };
   set('floppyName', 'floppySize', floppy, (m) => fmtSize(m.bytes.length));
+  templateForDisk(floppy?.name);
   set('profileName', 'profileSize', profile, (m) => fmtSize(m.bytes.length));
   set('romName', 'romSize', rom, (m) => (m.rom.lo ? `${fmtSize(m.rom.lo.length + m.rom.hi.length)}, lo + hi` : fmtSize(m.rom.length)));
   $('btnEjectFloppy').disabled = !floppy;
@@ -708,6 +711,105 @@ function showKeyboard(on) {
 $('kbToggle').addEventListener('click', () => showKeyboard(document.activeElement !== kbInput));
 kbInput.addEventListener('blur', () => $('kbToggle').setAttribute('aria-pressed', 'false'));
 // a tap on the screen after the keyboard has been opened should not lose it: typing stays where it was
+
+// ---- per-game key templates (phones and tablets) -----------------------------------------------------------
+//
+// A template (keypads.js) puts the keys one program uses beside the screen, large, in place of the bar of Lisa
+// keys. The floppy's name chooses it, and the Keys menu can change it. A key is held down for as long as the
+// finger stays on it, and for at least TPL_MIN_HOLD ms: a game may read the keyboard only once a frame, and a
+// tap that came and went in between would never be seen. A key with longPress is sent only once the finger has
+// stayed that long, and then as one short press.
+
+const TPL_MIN_HOLD = 60;
+const TPL_KEYS = { space: 'Space', return: 'Enter', backspace: 'Backspace', left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight' };
+const tplCode = (k) => KEYMAP[TPL_KEYS[k] ?? (/^[0-9]$/.test(k) ? 'Digit' + k : 'Key' + k.toUpperCase())];
+const tplDown = new Set();   // keys a template button is holding down
+for (const [id, t] of Object.entries(TEMPLATES)) $('kbTemplate').add(new Option('Keys: ' + t.name, id));
+
+function tplPress(code) { if (lisa && !held.has(code)) { held.add(code); tplDown.add(code); lisa.key(code, true); } }
+function tplRelease(code) { tplDown.delete(code); if (held.delete(code)) lisa?.key(code, false); }
+function bindHold(b, code, longPress = 0) {
+  let t0 = 0, timer = 0, pid = null;
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pid !== null) return;
+    pid = e.pointerId;
+    try { b.setPointerCapture(pid); } catch { /* the pointer already ended */ }
+    if (longPress) {
+      b.style.setProperty('--long', longPress + 'ms');
+      b.classList.add('arming');
+      timer = setTimeout(() => {
+        timer = 0;
+        if (!b.isConnected) return;                        // the page changed under the finger
+        b.classList.replace('arming', 'down');
+        tplPress(code); setTimeout(() => tplRelease(code), TPL_MIN_HOLD);
+      }, longPress);
+    } else { b.classList.add('down'); tplPress(code); t0 = performance.now(); }
+  });
+  const up = (e) => {
+    if (e.pointerId !== pid) return;
+    pid = null;
+    if (longPress) { clearTimeout(timer); timer = 0; b.classList.remove('arming', 'down'); return; }
+    b.classList.remove('down');
+    const wait = TPL_MIN_HOLD - (performance.now() - t0);
+    if (wait > 0) setTimeout(() => tplRelease(code), wait); else tplRelease(code);
+  };
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+function tplButton({ key, label, tone, longPress, span, size, hint, aria, arrow }) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.tabIndex = -1;                      // never take focus (and the phone keyboard) away
+  b.className = ['tk', tone, size, arrow && 'arrow'].filter(Boolean).join(' ');
+  if (span) b.style.gridColumn = `span ${span}`;
+  if (aria) b.setAttribute('aria-label', aria);
+  b.append(label);
+  // the Lisa key under the label, when the label does not already say it
+  const keyName = key.length === 1 && label.toLowerCase() !== key ? key.toUpperCase() : key === 'space' ? 'Space' : '';
+  const sub = [keyName, hint].filter(Boolean).join(' · ');
+  if (sub) { const s = document.createElement('small'); s.textContent = sub; b.append(s); }
+  bindHold(b, tplCode(key), longPress);
+  return b;
+}
+const tplDiv = (cls, ...kids) => { const d = document.createElement('div'); d.className = cls; d.append(...kids); return d; };
+function renderTemplate() {
+  for (const code of [...tplDown]) tplRelease(code);      // a key must not stay down when its button goes
+  const t = coarse.matches ? TEMPLATES[tpl.id] : null, stage = $('stage');   // like the key bar: touch screens only
+  stage.classList.toggle('templated', !!t);
+  $('padLeft').replaceChildren(); $('padRight').replaceChildren();
+  if (!t) { stage.classList.remove('page-digits'); return; }
+  const page = t.pages[tpl.page];
+  stage.classList.toggle('page-digits', !!page.digits);
+  $('kbPage').textContent = t.pages[(tpl.page + 1) % t.pages.length].name;
+  $('kbPage').hidden = t.pages.length < 2;
+  if (page.pad) {
+    const arrow = (key, label, aria) => tplButton({ key, label, aria, arrow: true });
+    const gap = () => tplDiv('spacer');
+    $('padLeft').append(tplDiv('dpad', gap(), arrow('up', '↑', 'Up'), gap(),
+      arrow('left', '←', 'Left'), tplButton({ tone: 'main', ...page.pad.center }), arrow('right', '→', 'Right'),
+      gap(), arrow('down', '↓', 'Down'), gap()));
+    const grid = tplDiv('tkgrid', ...page.buttons.map(tplButton));
+    grid.style.setProperty('--cols', page.columns ?? 3);
+    $('padRight').append(grid);
+  } else if (page.digits) {
+    $('padRight').append(tplDiv('tkdigits', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => tplButton({ key: String(n), label: String(n) })),
+      tplButton({ key: '0', label: '0', span: 3 })));
+    $('padLeft').append(tplDiv('tkside', ...(page.side ?? []).map(tplButton)));
+  }
+}
+function useTemplate(id) { tpl.id = id; tpl.page = 0; $('kbTemplate').value = id; renderTemplate(); }
+/** Called whenever the floppy changes: the disk's own template, or the plain bar. */
+function templateForDisk(name) {
+  if (!tpl.ready) return;                                  // renderSlots runs once before this section is set up
+  const id = templateFor(name) ?? '';
+  if (id !== tpl.id) useTemplate(id);
+}
+$('kbTemplate').addEventListener('change', (e) => useTemplate(e.target.value));
+$('kbPage').addEventListener('click', () => { tpl.page = (tpl.page + 1) % TEMPLATES[tpl.id].pages.length; renderTemplate(); });
+coarse.addEventListener('change', renderTemplate);
+tpl.ready = true;
+templateForDisk(floppy?.name);
 
 // ---- full screen (where the browser allows it: not iPhone Safari, which has Add to Home Screen instead) ----
 if (document.fullscreenEnabled) {
