@@ -60,9 +60,12 @@ function applyFx(preset, fx) {
 }
 {
   const saved = store.get('fx', { preset: 'soft', fx: PRESETS.soft });
+  // Named presets follow the current defaults; custom settings and the independent Edge choice survive.
+  const preset = saved?.preset === 'custom' || Object.hasOwn(PRESETS, saved?.preset) ? saved.preset : 'soft';
+  const fx = preset === 'custom' ? saved.fx : { ...PRESETS[preset], edge: saved?.fx?.edge ?? EDGES.B };
   const aspect = ASPECTS[store.get('aspect', 'lisa')] ? store.get('aspect', 'lisa') : 'lisa';
   $('aspect').value = aspect; display.setAspect(aspect);
-  applyFx(saved.preset, saved.fx);
+  applyFx(preset, fx);
   if (store.get('panel', true) === false) { $('btnPanel').setAttribute('aria-expanded', 'false'); document.querySelector('.layout').classList.add('nopanel'); }
 }
 const narrow = matchMedia('(max-width: 900px)');
@@ -229,7 +232,8 @@ function renderPower() {
   const have = availableDevices(), labels = { floppy: 'Floppy disk', profile: 'Hard disk (ProFile)', menu: "The ROM's startup menu" };
   const sel = $('bootFrom');
   sel.innerHTML = have.map((d) => `<option value="${d}">${labels[d]}</option>`).join('');
-  sel.disabled = have.length === 0;
+  sel.disabled = have.length < 2;
+  $('bootFromRow').hidden = have.length < 2;
   if (bootFrom) sel.value = bootFrom;
   $('btnPower').disabled = !bootFrom;
   $('btnPower').textContent = lisa ? 'Restart' : 'Power on';
@@ -310,10 +314,13 @@ dropTarget($('screenWrap'), async (fs) => {
 // Disk images and ROMs served by `serve.mjs --media <dir>`, or bundled by build-pages (optional).
 // Resolves to { list, insert(disk) } (an empty list when there is no media folder).
 const media = (async () => {
-  const none = { list: [], insert: async () => {} };
+  const none = () => {
+    $('localDisks').replaceChildren(new Option('No bundled images available', ''));
+    return { list: [], insert: async () => {} };
+  };
   try {
     const r = await fetch('media/index.json');
-    if (!r.ok) return none;
+    if (!r.ok) return none();
     const all = await r.json();
     const roms = all.filter((d) => classify(d.name, d.size) === 'rom'), list = all.filter((d) => classify(d.name, d.size) !== 'rom');
     const fetchFile = async (d) => new File([await (await fetch('media/' + encodeURIComponent(d.name))).arrayBuffer()], d.name);
@@ -326,12 +333,13 @@ const media = (async () => {
       const f = await fetchFile(d);
       await (classify(d.name, d.size) === 'profile' ? takeProfile(f) : takeFloppy(f));
     };
-    if (!list.length) return none;
-    $('localRow').hidden = false;
-    $('localDisks').innerHTML = list.map((d) => `<option value="${d.name}">${d.name} (${fmtSize(d.size)}, ${classify(d.name, d.size) === 'profile' ? 'hard disk' : 'floppy'})</option>`).join('');
+    if (!list.length) return none();
+    $('localDisks').replaceChildren(...list.map((d) => new Option(`${d.name} (${fmtSize(d.size)}, ${classify(d.name, d.size) === 'profile' ? 'hard disk' : 'floppy'})`, d.name)));
+    $('localDisks').disabled = false;
+    $('btnInsertLocal').disabled = false;
     $('btnInsertLocal').addEventListener('click', () => busy($('btnInsertLocal'), 'Loading…', () => insert(list.find((x) => x.name === $('localDisks').value))));
     return { list, insert };
-  } catch { return none; /* no media server */ }
+  } catch { return none(); /* no media server */ }
 })();
 
 // ---- keeping disk changes ---------------------------------------------------------------
@@ -380,8 +388,14 @@ async function saveDisks() {
 setInterval(saveDisks, 15000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveDisks(); });
 window.addEventListener('pagehide', saveDisks);
-$('keepChanges').addEventListener('change', () => store.set('keep', $('keepChanges').checked));
+function renderDiskPersistence() {
+  $('diskPersistence').textContent = $('keepChanges').checked
+    ? 'Disk changes saved automatically in this browser.'
+    : 'Disk changes are not saved in this browser.';
+}
+$('keepChanges').addEventListener('change', () => { store.set('keep', $('keepChanges').checked); renderDiskPersistence(); });
 $('keepChanges').checked = store.get('keep', true);
+renderDiskPersistence();
 
 function download(bytes, name) {
   const a = document.createElement('a');
@@ -407,24 +421,29 @@ $('btnRevert').addEventListener('click', async () => {
 
 // ---- saving the whole machine ------------------------------------------------------------
 
+function sessionStatus(message) {
+  $('sessionStatus').textContent = message;
+  $('sessionStatus').hidden = false;
+  log(message);
+}
 $('btnSaveState').addEventListener('click', async () => {
   if (!lisa) return;
   $('btnSaveState').disabled = true;
   try {
     const bytes = await lisa.serialize();
     const ok = await idbPut('state', { bytes: bytes.buffer, savedAt: Date.now(), at: lisa.time });
-    log(ok ? `Saved machine state (${(bytes.length / 1048576).toFixed(1)} MB, ${(lisa.time / 1000).toFixed(0)} s into the run).` : 'Could not save state (storage unavailable).');
+    sessionStatus(ok ? `Saved machine state (${(bytes.length / 1048576).toFixed(1)} MB, ${(lisa.time / 1000).toFixed(0)} s into the run).` : 'Could not save state (storage unavailable).');
   } finally { $('btnSaveState').disabled = false; }
 });
 $('btnLoadState').addEventListener('click', async () => {
   const saved = await idbGet('state');
-  if (!saved) { log('No saved state in this browser.'); return; }
+  if (!saved) { sessionStatus('No saved state in this browser.'); return; }
   lisa = await Lisa.deserialize(new Uint8Array(saved.bytes));
   stopped = false; paused = false; $('btnPause').textContent = 'Pause';
   const s = lisa.screen(); screenW = s.width; screenH = s.height;
   display.setAspect(screenW === SCREEN_W ? $('aspect').value : screenW / screenH);
   $('hint').classList.add('gone'); setEnabled(true); drawScreen();
-  log(`Resumed saved state from ${new Date(saved.savedAt).toLocaleString()}.`);
+  sessionStatus(`Resumed saved state from ${new Date(saved.savedAt).toLocaleString()}.`);
 });
 
 // ---- boot ROM ---------------------------------------------------------------------------
@@ -534,10 +553,11 @@ const romReady = (async () => {
 // ---- collapsible cards, remembered per browser ------------------------------------------------
 
 {
-  const open = store.get('cards', {});
+  // Start the Essentials groups collapsed instead of inheriting the old sidebar's open cards.
+  const open = store.get('essentials.cards', {});
   for (const d of document.querySelectorAll('details[data-card]')) {
     if (open[d.dataset.card] !== undefined) d.open = open[d.dataset.card];
-    d.addEventListener('toggle', () => { const s = store.get('cards', {}); s[d.dataset.card] = d.open; store.set('cards', s); });
+    d.addEventListener('toggle', () => { const s = store.get('essentials.cards', {}); s[d.dataset.card] = d.open; store.set('essentials.cards', s); });
   }
 }
 renderSlots();
@@ -794,7 +814,7 @@ const TPL_MIN_HOLD = 60;
 const TPL_KEYS = { space: 'Space', return: 'Enter', backspace: 'Backspace', left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight' };
 const tplCode = (k) => KEYMAP[TPL_KEYS[k] ?? (/^[0-9]$/.test(k) ? 'Digit' + k : 'Key' + k.toUpperCase())];
 const tplDown = new Set();   // keys a template button is holding down
-for (const [id, t] of Object.entries(TEMPLATES)) $('kbTemplate').add(new Option('Keys: ' + t.name, id));
+for (const [id, t] of Object.entries(TEMPLATES)) $('kbTemplate').add(new Option(t.name, id));
 
 function tplPress(code) { if (lisa && !held.has(code)) { held.add(code); tplDown.add(code); lisa.key(code, true); } }
 function tplRelease(code) { tplDown.delete(code); if (held.delete(code)) lisa?.key(code, false); }
@@ -845,7 +865,7 @@ function tplButton({ key, label, tone, longPress, span, size, hint, aria, arrow 
 const tplDiv = (cls, ...kids) => { const d = document.createElement('div'); d.className = cls; d.append(...kids); return d; };
 function renderTemplate() {
   for (const code of [...tplDown]) tplRelease(code);      // a key must not stay down when its button goes
-  const t = coarse.matches ? TEMPLATES[tpl.id] : null, stage = $('stage');   // like the key bar: touch screens only
+  const t = coarse.matches && $('showKeys').checked ? TEMPLATES[tpl.id] : null, stage = $('stage');
   stage.classList.toggle('templated', !!t);
   $('padLeft').replaceChildren(); $('padRight').replaceChildren();
   if (!t) { stage.classList.remove('page-digits'); return; }
@@ -879,6 +899,16 @@ $('kbTemplate').addEventListener('change', (e) => useTemplate(e.target.value));
 $('kbPage').addEventListener('click', () => { tpl.page = (tpl.page + 1) % TEMPLATES[tpl.id].pages.length; renderTemplate(); });
 coarse.addEventListener('change', renderTemplate);
 tpl.ready = true;
+$('showKeys').checked = store.get('showKeys', coarse.matches);
+function renderKeys() {
+  const show = $('showKeys').checked;
+  $('keybar').hidden = !show;
+  $('keybar').classList.toggle('show', show);
+  if (!show) { showKeyboard(false); releaseMods(); }
+  renderTemplate();
+}
+$('showKeys').addEventListener('change', () => { store.set('showKeys', $('showKeys').checked); renderKeys(); });
+renderKeys();
 templateForDisk(floppy?.name);
 
 // ---- full screen (where the browser allows it: not iPhone Safari, which has Add to Home Screen instead) ----

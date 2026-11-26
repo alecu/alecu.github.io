@@ -17,7 +17,7 @@ export const EDGES = { A: 0, B: 1.5, C: 4, max: 6 };
 
 export const PRESETS = {
   clean:  { curve: 0,    scan: 0,    glow: 0,    mask: 0,    vignette: 0,    border: 0.03 },
-  soft:   { curve: 0.04, scan: 0.35, glow: 0.35, mask: 0.12, vignette: 0.25, border: 0.05 },
+  soft:   { curve: 0.02, scan: 0.35, glow: 0.35, mask: 0.12, vignette: 0.25, border: 0.05 },
   crt:    { curve: 0.09, scan: 0.6,  glow: 0.5,  mask: 0.25, vignette: 0.4,  border: 0.07 },
 };
 
