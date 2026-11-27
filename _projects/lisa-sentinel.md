@@ -39,8 +39,8 @@ screenshots:
     alt: An aerial view of landscape 0000, a checkered landscape under a starry sky
     caption: Start at landscape 0000. Each landscape opens with a view from above; press any key to begin.
   - file: sentinel-scanner
-    alt: The Sentinel on its tower, turned to face you, with the scanner at the top right of the screen full of static
-    caption: The Sentinel is facing you, so the scanner at the top right fills with static. While it can see your square, it drains your energy, one unit at a time. Get out of its sight, or press H to hyperspace.
+    alt: The Sentinel on its tower at the top of a hill, looking down at you, with the scanner at the top right of the screen full of static
+    caption: The Sentinel has turned to look down at you, so the scanner at the top right fills with static. While it can see your square, it drains your energy, one unit at a time. Get out of its sight, or press H to hyperspace.
   - file: overview
     alt: An overview of the whole landscape with its trees, seen from above
     caption: Press M while looking at clear sky to see the whole landscape from above and plan your climb.
@@ -94,11 +94,11 @@ Start at landscape 0000. Absorb trees for energy, stack boulders, create robots 
     <dt>Screen</dt><dd>The standard 720 &times; 364 display</dd>
     <dt>Input</dt><dd>Lisa keyboard and mouse</dd>
     <dt>Sound</dt><dd>The Lisa's built-in speaker</dd>
-    <dt>Not supported</dt><dd>The Lisa 1 and its Twiggy drives, the Macintosh XL's 3A ROM, and Lisas with the screen modification kit</dd>
+    <dt>Not supported yet</dt><dd>The Lisa 1 and its Twiggy drives, the Macintosh XL's 3A ROM, and Lisas with the screen modification kit</dd>
     <dt>In a browser</dt><dd>Any current desktop or mobile browser</dd>
 </dl>
 
-This is a beta. Beta4 won landscape 0000 on my Lisa 2/5, and beta5 played well there too. Since then, only beta7b's title music has been checked on the Lisa; everything else that changed has so far been checked in the emulator.
+This is a beta. Beta8 has been tested extensively on my Lisa 2/5, booting from a Floppy Emu, but not yet on other Lisas or from a real floppy drive. If you can help test it, or have any feedback at all, I'd really appreciate it: write to [{{ site.email }}](mailto:{{ site.email }}).
 
 ## Downloads
 
