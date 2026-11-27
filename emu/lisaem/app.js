@@ -122,7 +122,7 @@ async function newMachine() {
   stopped = false;
   const s = lisa.screen(); screenW = s.width; screenH = s.height;
   display.setAspect(screenW === SCREEN_W ? $('aspect').value : screenW / screenH); // XL screens have square-ish pixels
-  $('hint').classList.add('gone');
+  $('hint').classList.add('gone'); $('start').hidden = true;
   paused = false; $('btnPause').textContent = 'Pause';
   setEnabled(true);
   if (narrow.matches) { setPanel(false, false); canvas.scrollIntoView({ block: 'nearest' }); }
@@ -442,7 +442,7 @@ $('btnLoadState').addEventListener('click', async () => {
   stopped = false; paused = false; $('btnPause').textContent = 'Pause';
   const s = lisa.screen(); screenW = s.width; screenH = s.height;
   display.setAspect(screenW === SCREEN_W ? $('aspect').value : screenW / screenH);
-  $('hint').classList.add('gone'); setEnabled(true); drawScreen();
+  $('hint').classList.add('gone'); $('start').hidden = true; setEnabled(true); drawScreen();
   sessionStatus(`Resumed saved state from ${new Date(saved.savedAt).toLocaleString()}.`);
 });
 
@@ -534,20 +534,43 @@ const romReady = (async () => {
 
 // ---- a link that opens a disk: ?disk=<name> -----------------------------------------------------------
 //
-// Inserts a disk from the media folder and powers on, once the boot ROM (if any) has arrived. The name is a
-// disk's file name, or any part of it: then the last match by name (numbers compared as numbers) is taken, so
-// ?disk=sentinel stays a good link when a newer build replaces the disk. Only disks in the media folder open.
+// Inserts a disk from the media folder, once the boot ROM (if any) has arrived, and powers on when the Play
+// button over the screen is clicked. The name is a disk's file name, or any part of it: then the last match by
+// name (numbers compared as numbers) is taken, so ?disk=sentinel stays a good link when a newer build replaces
+// the disk. Only disks in the media folder open.
+//
+// Browsers keep a page silent until it has been clicked or a key pressed, so a machine that powered on by
+// itself would lose whatever it plays before the first click (The Sentinel's title music). The Play click
+// starts the sound first, and the disk loads while the button waits.
 
 (async () => {
   const want = new URLSearchParams(location.search).get('disk');
   if (!want) return;
-  const { list, insert } = await media;
-  const d = list.find((x) => x.name === want) ?? list.filter((x) => x.name.toLowerCase().includes(want.toLowerCase()))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).at(-1);
-  if (!d) { log(`The link asks for a disk named “${want}”, which is not in the media folder.`); return; }
-  await romReady;
-  await insert(d);
-  await newMachine();
+  const play = $('btnPlay');
+  const done = () => { $('start').hidden = true; if (!lisa) $('hint').classList.remove('gone'); };
+  $('hint').classList.add('gone'); $('start').hidden = false;
+  play.focus({ preventScroll: true });   // Return or Space plays, too
+  const clicked = new Promise((resolve) => play.addEventListener('click', () => {
+    // in the click itself: an audio context created or resumed later can stay suspended (Safari)
+    if ($('sound').checked) { ensureSound(); sound.ctx?.resume().catch(() => {}); }
+    play.disabled = true; play.setAttribute('aria-busy', 'true'); $('playLabel').textContent = 'Starting…';
+    resolve();
+  }, { once: true }));
+  try {
+    const { list, insert } = await media;
+    const d = list.find((x) => x.name === want) ?? list.filter((x) => x.name.toLowerCase().includes(want.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).at(-1);
+    if (!d) { log(`The link asks for a disk named “${want}”, which is not in the media folder.`); return; }
+    $('startName').textContent = d.name;
+    await romReady;
+    await insert(d);
+    await clicked;
+    if ($('sound').checked) await ensureSound();
+    if (!lisa) await newMachine();   // unless Power on in Controls already started it
+    canvas.focus();
+  } catch (e) {
+    log(`Could not open the disk the link asks for: ${e.message || e}`);
+  } finally { done(); }
 })();
 
 // ---- collapsible cards, remembered per browser ------------------------------------------------

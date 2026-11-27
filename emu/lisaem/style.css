@@ -44,6 +44,14 @@ body { background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -app
 #screen:focus-visible { box-shadow: 0 0 0 3px var(--focus); }
 .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: #8a8579; background: #0a0a0a; border-radius: 6px; font-size: 15px; pointer-events: none; transition: opacity .25s; }
 .hint.gone { opacity: 0; }
+/* a ?disk= link waits behind a Play button: browsers only allow sound after a click */
+.start { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 20px; text-align: center; background: #0a0a0a; border-radius: 6px; }
+.start[hidden] { display: none; }
+button.play { display: inline-flex; align-items: center; gap: 10px; padding: 14px 30px 14px 24px; font-size: 22px; border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,.4); touch-action: manipulation; }
+button.play svg { width: 22px; height: 22px; fill: currentColor; }
+button.play:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+button.play[aria-busy="true"] { opacity: .75; cursor: progress; }
+.start-name { margin: 0; color: #8a8579; font-size: 13.5px; overflow-wrap: anywhere; }
 .screen.drag { outline: 3px dashed var(--accent); outline-offset: 4px; }
 .kbhelp { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; text-align: center; }
 kbd { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }

@@ -33,6 +33,10 @@
       <div class="screen" id="screenWrap">
         <canvas id="screen" width="720" height="500" tabindex="0" aria-label="Lisa screen. Click to capture the keyboard."></canvas>
         <div class="hint" id="hint"><span class="only-fine">Drop a disk image here, or choose one in Controls</span><span class="only-coarse">Tap <b>Controls</b>, choose a disk image, then Power on</span></div>
+        <div class="start" id="start" hidden>
+          <button class="primary play" id="btnPlay"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg><span id="playLabel">Play</span></button>
+          <p class="start-name" id="startName"></p>
+        </div>
       </div>
       <div class="keybar" id="keybar" role="toolbar" aria-label="Lisa keys">
         <button id="kbToggle" class="kb wide" aria-pressed="false" title="Show the on-screen keyboard">⌨ Keyboard</button>
