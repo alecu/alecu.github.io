@@ -58,7 +58,7 @@ screenshots:
     caption: After a transfer, absorb the robot you left behind to get its energy back.
   - file: next-code
     alt: The secret entry code 44881440 for landscape 0002, in block numbers, next to the Sentinel
-    caption: Absorb the Sentinel, create a robot on its tower, transfer and hyperspace. You win the code for the next landscape.
+    caption: Once you absorb the Sentinel you can't absorb anything else. Create a robot on its tower, transfer into it and hyperspace from the Sentinel's square to win the code for the next landscape.
 ---
 ## Play it
 
@@ -83,7 +83,9 @@ screenshots:
 | <kbd>U</kbd> | U-turn |
 | <kbd>M</kbd> | Overview of the landscape, while looking at clear sky. <kbd>Return</kbd> goes back. |
 
-Start at landscape 0000. Absorb trees for energy, stack boulders, create robots on higher ground and transfer into them, until you can see the Sentinel's platform. Absorb the Sentinel, create a robot on its tower, transfer, and hyperspace out. Stay out of the Sentinel's sight while you climb: it drains your energy. The [player guide]({{ page.guide.url | prepend: site.baseurl }}) has the details and the codes for nine landscapes.
+Start at landscape 0000. Absorb trees for energy, stack boulders, create robots on higher ground and transfer into them, until you can see the Sentinel's platform. Stay out of the Sentinel's sight while you climb: it drains your energy.
+
+Once you absorb the Sentinel, you can't absorb anything else, so gather the energy you need first. To win the landscape, create a robot on the Sentinel's tower, transfer into it so you stand on the Sentinel's square, and hyperspace from there. The [player guide]({{ page.guide.url | prepend: site.baseurl }}) has the details and the codes for nine landscapes.
 
 ## System requirements
 
