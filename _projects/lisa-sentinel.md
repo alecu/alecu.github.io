@@ -25,7 +25,7 @@ disk:
   sums: /downloads/lisa-sentinel/sentinel-lisa-beta8-SHA256SUMS
 guide:
   url: /downloads/lisa-sentinel/sentinel-lisa-player-guide.pdf
-  size: 32 KB
+  size: 35 KB
   preview: img/lisa-sentinel/player-guide.png
 # Each file is img/lisa-sentinel/<file>.png (720 x 546, smoothed for the page) and <file>-full.png
 # (the raw 720 x 364 framebuffer at 2x horizontal and 3x vertical scale, for the full-size view).
