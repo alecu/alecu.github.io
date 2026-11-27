@@ -4,9 +4,10 @@ title: "alecu"
 description: "Community and volunteer projects from Argentina: electromechanical games, tabletop megagames and vintage computer restorations."
 ---
 {% assign t = site.data.i18n[page.lang] %}
-{% assign projects = site.projects | sort: "order" %}
+{% assign projects = site.projects | where_exp: "p", "p.card != false" | sort: "order" %}
 {% assign posts = site.posts | where_exp: "p", "p.archive != true" %}
 {% assign lisa = site.projects | where: "slug", "restorations" | first %}
+{% assign sentinel = site.projects | where: "slug", "lisa-sentinel" | first %}
 
 <section class="wrap home-hero">
     <p class="eyebrow">{{ t.home.kicker }}</p>
@@ -19,6 +20,26 @@ description: "Community and volunteer projects from Argentina: electromechanical
         {% for project in projects %}
         {% include project-card.html project=project featured=forloop.first %}
         {% endfor %}
+    </div>
+</section>
+
+<section class="wrap home-section" id="lisa-sentinel">
+    <h2>{{ t.home.new_release }}</h2>
+    <div class="split spotlight">
+        <a class="lisa-screen spotlight__screen" href="{{ sentinel.url | prepend: site.baseurl }}">
+            <img src="{{ sentinel.image | relative_url }}" alt="{{ sentinel.image_alt }}" width="1200" height="910" loading="lazy">
+        </a>
+        <div>
+            <p class="eyebrow">Apple Lisa &middot; {{ sentinel.version }} &middot; {{ sentinel.released }}</p>
+            <h3><a class="spotlight__title" href="{{ sentinel.url | prepend: site.baseurl }}">{{ sentinel.title }}</a></h3>
+            <p class="spotlight__lede">{{ sentinel.tagline }}</p>
+            <p class="muted">{{ sentinel.intro }}</p>
+            <p class="game-actions">
+                <a class="button" href="{{ sentinel.play_url | prepend: site.baseurl }}">{{ t.game.play }}</a>
+                <a class="button button--ghost" href="{{ sentinel.disk.url | prepend: site.baseurl }}" download>{{ t.game.download }}</a>
+            </p>
+            <p><a href="{{ sentinel.url | prepend: site.baseurl }}">{{ t.game.more }} &rarr;</a></p>
+        </div>
     </div>
 </section>
 

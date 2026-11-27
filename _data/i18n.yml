@@ -13,6 +13,7 @@ en:
       Community and volunteer projects from Argentina: electromechanical games,
       tabletop megagames and vintage computer restorations, all built in the open.
     projects: Projects
+    new_release: New release
     lineage: How it connects
     restorations: Restorations
     demos: Demos and small projects
@@ -21,6 +22,14 @@ en:
     writing: Latest writing
     all_posts: All posts
     more: Read more
+  game:
+    play: Play in your browser
+    download: Download the disk
+    guide: Player guide
+    free: Free
+    screenshots: Screenshots
+    screenshot_hint: Click a screenshot to see it full size, in the Lisa's own pixels.
+    more: Screenshots, downloads and how it was made
   project:
     links: Links
     writing: Writing about this

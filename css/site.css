@@ -293,3 +293,71 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 .zoom { display: block; cursor: zoom-in; }
 .zoom img { display: block; }
 .figure-hint { font-size: .85rem; color: var(--muted); margin-top: -.6em !important; }
+
+/* Game landing page (_layouts/game.html) and its homepage spotlight */
+
+.button--ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--line); }
+.button--ghost:hover { filter: none; color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.game-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+
+.game-hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding-top: 32px; }
+.game-hero .page-title { margin-top: 0; font-size: clamp(2rem, 5vw, 3.2rem); }
+.game-hero .page-lede { color: var(--text); margin-bottom: 12px; }
+.game-hero__intro { color: var(--muted); margin: 0 0 22px; }
+.game-hero__meta { font: .78rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+.game-hero__screen { margin: 0; }
+
+/* A screenshot in a bezel the colour of a Lisa's case. */
+.lisa-screen { display: block; padding: 14px 14px 18px; border-radius: 14px; background: linear-gradient(#e6dfcc, #cdc4ab); box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .08); }
+.lisa-screen img { display: block; width: 100%; height: auto; border-radius: 6px; background: #000; }
+
+.game-section { margin-top: 56px; }
+.game-section > h2 { font: 700 .85rem var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 18px; }
+.shot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.shot-grid figure { margin: 0; }
+.shot-grid img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); background: #000; }
+.shot-grid a:hover img { border-color: var(--accent); }
+.shot-grid figcaption { font-size: .88rem; line-height: 1.45; color: var(--muted); margin-top: 8px; }
+.game-section .figure-hint { margin-top: 16px !important; }
+.game .prose { margin-top: 40px; }
+
+.prose table { width: 100%; border-collapse: collapse; margin: 0 0 1.1em; font-size: .95rem; }
+.prose th, .prose td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.prose th { font: 700 .75rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.prose td:first-child { white-space: nowrap; }
+kbd { display: inline-block; min-width: 1.7em; padding: 0 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg-raised); font: .82em/1.6 var(--font-mono); text-align: center; }
+
+.spec-list, .credit-list { display: grid; grid-template-columns: max-content 1fr; gap: 10px 22px; margin: 0 0 1.1em; }
+.spec-list dt, .credit-list dt { font: 700 .75rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-top: .35em; }
+.spec-list dd, .credit-list dd { margin: 0; }
+
+.download-list { list-style: none; margin: 0 0 1.1em; padding: 0; display: grid; gap: 14px; }
+.download-list li { position: relative; padding: 16px 18px; background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); }
+.download-list__main { display: block; text-decoration: none; }
+.download-list__main:hover .download-list__title { text-decoration: underline; }
+.download-list__title { display: block; font-weight: 700; font-size: 1.1rem; }
+.download-list__meta { display: block; font: .8rem var(--font-mono); color: var(--muted); }
+.download-list__note { margin: 8px 0 0 !important; font-size: .9rem; color: var(--muted); }
+.download-list__note code { word-break: break-all; }
+.download-list__with-preview { min-height: 150px; padding-right: 128px !important; }
+.prose .download-list__preview { position: absolute; top: 16px; right: 18px; width: 90px; border-radius: 3px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+
+.spotlight h3 { font-size: 1.8rem; margin-bottom: 4px; }
+.spotlight__title { color: var(--text); text-decoration: none; }
+.spotlight__title:hover { color: var(--accent); }
+.spotlight__lede { font-size: 1.1rem; margin: 0 0 8px; }
+.spotlight .muted { margin: 0 0 18px; }
+
+@media (max-width: 900px) {
+    .game-hero { grid-template-columns: 1fr; gap: 28px; }
+    .shot-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 620px) {
+    .shot-grid { grid-template-columns: 1fr; }
+    .spec-list, .credit-list { grid-template-columns: 1fr; gap: 0; }
+    .spec-list dd, .credit-list dd { margin-bottom: 12px; }
+    .download-list__with-preview { min-height: 0; padding-right: 18px !important; }
+    .prose .download-list__preview { display: none; }
+    .prose td:first-child { white-space: normal; }
+}

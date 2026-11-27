@@ -13,7 +13,9 @@ bundle exec jekyll serve
 
 ## Where things are
 
-- `_projects/` one file per project: front matter drives the homepage cards, the body is the project page.
+- `_projects/` one file per project: front matter drives the homepage cards, the body is the project page. `card: false` keeps a project out of the card grid; The Lisa Sentinel has its own homepage section and uses the `game` layout.
+- `emu/lisaem/` LisaEm Web, built with the LisaEm checkout's `web/build-pages.mjs`. `/emu/lisaem/?disk=sentinel` boots the newest Sentinel disk in `emu/lisaem/media/`.
+- `downloads/` files offered for download, such as disk images and PDFs. When a new Sentinel beta replaces the one in `emu/lisaem/media/`, update `downloads/lisa-sentinel/` and the `version`, `released` and `disk` fields in `_projects/lisa-sentinel.md` to match.
 - `_posts/` blog posts. `archive: true` moves a post to `/archive/`; `project: <slug>` lists it on that project's page.
 - `_data/demos.yml` the demos section. `_data/i18n.yml` UI strings.
 - `img/projects/` and `img/restorations/` hold the photos, resized to at most 1600px.

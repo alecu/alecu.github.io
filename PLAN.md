@@ -25,6 +25,8 @@ Main (cards above the fold):
 | Megajuegos | https://www.megajuegos.com.ar/ | Founded and led by alecu, 2016-2022. |
 | Restorations | `/projects/restorations/` | Apple Lisa (alecu's collection), Virtuality 1000CS (EspacioTec, in progress), plus five machines on the bench. EspacioTec is explained and linked: https://espaciotec.com.ar/ |
 
+Releases: The Lisa Sentinel (`/projects/lisa-sentinel/`), The Sentinel ported to the Apple Lisa. It stays out of the card grid (`card: false`) and has a "New release" section on the homepage after the cards, plus a link from the Apple Lisa restoration. It is played in LisaEm Web at `/emu/lisaem/?disk=sentinel`; the disk and player guide are in `/downloads/lisa-sentinel/`.
+
 Smaller (demos and tools):
 
 - Vlad Farty, 1st place oldskool demo, FlashParty '23. https://www.youtube.com/watch?v=Qut9HRcUoM0

@@ -1,0 +1,59 @@
+---
+layout: default
+---
+{% comment %}
+  Landing page for a game: a hero with the play and download buttons, a screenshot grid
+  from `page.screenshots`, then the body. Front matter: see _projects/lisa-sentinel.md.
+{% endcomment %}
+{% assign t = site.data.i18n[page.lang] %}
+{% assign related_posts = site.posts | where: "project", page.slug %}
+{% assign shots = '/img/' | append: page.slug | append: '/' | prepend: site.baseurl %}
+<article class="game">
+    <header class="wrap game-hero">
+        <div class="game-hero__text">
+            <p class="eyebrow"><a href="{{ site.baseurl }}/#projects">&larr; {{ t.project.back }}</a> &middot; Apple Lisa &middot; {{ page.years }}</p>
+            <h1 class="page-title">{{ page.title }}</h1>
+            <p class="page-lede">{{ page.tagline }}</p>
+            <p class="game-hero__intro">{{ page.intro }}</p>
+            <p class="game-actions">
+                <a class="button" href="{{ page.play_url | prepend: site.baseurl }}">{{ t.game.play }}</a>
+                <a class="button button--ghost" href="{{ page.disk.url | prepend: site.baseurl }}" download>{{ t.game.download }}</a>
+                <a class="button button--ghost" href="{{ page.guide.url | prepend: site.baseurl }}">{{ t.game.guide }}</a>
+            </p>
+            <p class="game-hero__meta">{{ page.version }} &middot; {{ page.released }} &middot; {{ t.game.free }}</p>
+        </div>
+        <figure class="lisa-screen game-hero__screen">
+            <img src="{{ page.image | relative_url }}" alt="{{ page.image_alt }}" width="1200" height="910">
+        </figure>
+    </header>
+
+    <section class="wrap game-section" id="screenshots" aria-labelledby="screenshots-title">
+        <h2 id="screenshots-title">{{ t.game.screenshots }}</h2>
+        <div class="shot-grid">
+            {% for shot in page.screenshots %}
+            <figure>
+                <a class="zoom" href="{{ shots | append: shot.file | append: '-full.png' }}" data-lightbox="{{ page.slug }}">
+                    <img src="{{ shots | append: shot.file | append: '.png' }}" alt="{{ shot.alt }}" width="720" height="546" loading="lazy">
+                </a>
+                <figcaption>{{ shot.caption }}</figcaption>
+            </figure>
+            {% endfor %}
+        </div>
+        <p class="figure-hint">{{ t.game.screenshot_hint }}</p>
+    </section>
+
+    <div class="wrap prose-wrap">
+        <div class="prose">
+            {{ content }}
+        </div>
+
+        <section class="project-section">
+            <h2>{{ t.project.writing }}</h2>
+            {% if related_posts.size > 0 %}
+            {% include post-list.html posts=related_posts %}
+            {% else %}
+            <p class="muted">{{ t.project.no_writing }}</p>
+            {% endif %}
+        </section>
+    </div>
+</article>

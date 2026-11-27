@@ -22,7 +22,7 @@ I restore vintage computers: cleaning, replacing worn parts, chasing faults, and
     <figcaption>The Lisa's main board on the bench, wired up for testing.</figcaption>
 </figure>
 
-An Apple Lisa from my collection. Once it ran again, I wrote a demo for it: *Alisando el Camino* took second place in the oldskool demo category at FlashParty '26.
+An Apple Lisa from my collection. Once it ran again, I wrote a demo for it: *Alisando el Camino* took second place in the oldskool demo category at FlashParty '26. Then I ported a game to it: [The Lisa Sentinel](/projects/lisa-sentinel/), Geoff Crammond's *The Sentinel* for the Lisa, which you can also play in your browser.
 
 Photos and write-ups of the restoration are coming to this page.
 
