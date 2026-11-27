@@ -2,7 +2,7 @@
 layout: default
 ---
 {% comment %}
-  Landing page for a game: a hero with the play and download buttons, a screenshot grid
+  Landing page for a game: a hero with the play and download buttons and the video (or the image), a screenshot grid
   from `page.screenshots`, then the body. Front matter: see _projects/lisa-sentinel.md.
 {% endcomment %}
 {% assign t = site.data.i18n[page.lang] %}
@@ -22,9 +22,13 @@ layout: default
             </p>
             <p class="game-hero__meta">{{ page.version }} &middot; {{ page.released }} &middot; {{ t.game.free }}</p>
         </div>
+        {% if page.video %}
+        {% include video-embed.html id=page.video.youtube title=page.video.title thumb="maxresdefault" class="game-hero__video" %}
+        {% else %}
         <figure class="lisa-screen game-hero__screen">
             <img src="{{ page.image | relative_url }}" alt="{{ page.image_alt }}" width="1200" height="910">
         </figure>
+        {% endif %}
     </header>
 
     <section class="wrap game-section" id="screenshots" aria-labelledby="screenshots-title">

@@ -306,6 +306,9 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 .game-hero__intro { color: var(--muted); margin: 0 0 22px; }
 .game-hero__meta { font: .78rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
 .game-hero__screen { margin: 0; }
+/* The hero video: the demos' click-to-load player, larger. */
+.game-hero__video { border-radius: var(--radius); overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+.game-hero__video button::after { width: 76px; height: 76px; margin: -38px 0 0 -38px; }
 
 /* A screenshot in a bezel the colour of a Lisa's case. */
 .lisa-screen { display: block; padding: 14px 14px 18px; border-radius: 14px; background: linear-gradient(#e6dfcc, #cdc4ab); box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .08); }

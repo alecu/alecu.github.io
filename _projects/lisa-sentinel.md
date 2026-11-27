@@ -11,6 +11,10 @@ intro: >-
   original 68000 code, draws in the Lisa's black-and-white pixels with the ZX Spectrum version's
   patterns, and plays the BBC Micro's music on the Lisa's speaker. Play it in your browser, or
   boot the floppy on a real Lisa 2.
+# The hero shows the video when there is one; the image is the social card and the homepage picture.
+video:
+  youtube: DaEQIPbXOjQ
+  title: The Apple Lisa Sentinel
 image: /img/lisa-sentinel/title-hero.png
 image_alt: The Sentinel's title screen on the Apple Lisa, with the title in large block letters and the Sentinel on its tower
 description: The Sentinel for the Apple Lisa. Play it in your browser, or download the floppy for a 1 MiB Lisa 2 with Boot ROM H. Screenshots, system requirements, credits and how the port was made.
