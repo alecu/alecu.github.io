@@ -33,34 +33,32 @@ guide:
   preview: img/lisa-sentinel/player-guide.png
 # Each file is img/lisa-sentinel/<file>.png (720 x 546, smoothed for the page) and <file>-full.png
 # (the raw 720 x 364 framebuffer at 2x horizontal and 3x vertical scale, for the full-size view).
+# In the order you play: each caption tells you what to do.
 screenshots:
-  - file: loading
-    alt: The loading screen, a black-and-white version of the Sentinel's eye artwork, with a progress bar
-    caption: The loading screen, converted from the original artwork, fills its bar as the game loads.
   - file: landscape-0000
     alt: An aerial view of landscape 0000, a checkered landscape under a starry sky
-    caption: Landscape 0000, the first of the game's 10,000.
-  - file: sights
-    alt: Two trees on a ridge under a striped sky, with a black cross outlined in white on the trunk of the left one
-    caption: The sights, a cross drawn in the Lisa's own pixels. Aim at the base of a tree and press A to absorb it.
-  - file: plain
-    alt: A plain of black, white and grey checkered tiles, with trees on the ridge beyond
-    caption: Trees, boulders and robots can only go on flat tiles.
-  - file: boulder-robot
-    alt: A robot standing on a boulder at the foot of a dark slope, with a tree on the ridge behind it
-    caption: A robot on a boulder. Boulders let you build higher than the ground you stand on.
-  - file: tree-and-robot
-    alt: A tree and a robot seen up close on a checkered tile
-    caption: Close up, every surface uses the Spectrum's patterns at the Lisa's resolution.
-  - file: absorb
-    alt: A robot dissolving into noise next to a tree
-    caption: Absorbing a robot. Objects dissolve in and out, as in the original.
+    caption: Start at landscape 0000. Each landscape opens with a view from above; press any key to begin.
+  - file: sentinel-scanner
+    alt: The Sentinel on its tower, turned to face you, with the scanner at the top right of the screen full of static
+    caption: The Sentinel is facing you, so the scanner at the top right fills with static. While it can see your square, it drains your energy, one unit at a time. Get out of its sight, or press H to hyperspace.
   - file: overview
     alt: An overview of the whole landscape with its trees, seen from above
-    caption: Press M while looking at clear sky for an overview of the landscape.
+    caption: Press M while looking at clear sky to see the whole landscape from above and plan your climb.
+  - file: sights
+    alt: Two trees on a ridge under a striped sky, with a black cross outlined in white on the trunk of the left one
+    caption: Click or press Space for the sights. Aim at the base of a tree and press A to absorb it for energy.
+  - file: plain
+    alt: A plain of black, white and grey checkered tiles, with trees on the ridge beyond
+    caption: Trees, boulders and robots go on flat tiles. Aim at a tile you can see and press T, B or R.
+  - file: boulder-robot
+    alt: A robot standing on a boulder at the foot of a dark slope, with a tree on the ridge behind it
+    caption: Create a robot on a boulder and press Q to transfer into it. From higher up you see more of the landscape.
+  - file: absorb
+    alt: A robot dissolving into noise next to a tree
+    caption: After a transfer, absorb the robot you left behind to get its energy back.
   - file: next-code
     alt: The secret entry code 44881440 for landscape 0002, in block numbers, next to the Sentinel
-    caption: Winning a landscape gives you the secret code for the next one you can play.
+    caption: Absorb the Sentinel, create a robot on its tower, transfer and hyperspace. You win the code for the next landscape.
 ---
 ## Play it
 
