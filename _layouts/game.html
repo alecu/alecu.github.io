@@ -51,13 +51,12 @@ layout: default
             {{ content }}
         </div>
 
+        {% comment %} Shown once a post names this project in its `project:` front matter. {% endcomment %}
+        {% if related_posts.size > 0 %}
         <section class="project-section">
             <h2>{{ t.project.writing }}</h2>
-            {% if related_posts.size > 0 %}
             {% include post-list.html posts=related_posts %}
-            {% else %}
-            <p class="muted">{{ t.project.no_writing }}</p>
-            {% endif %}
         </section>
+        {% endif %}
     </div>
 </article>
