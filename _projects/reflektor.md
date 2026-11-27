@@ -3,7 +3,7 @@ title: Reflektor
 order: 3
 years: 2013
 tagline: My first electromechanical game, made of mirrors, lasers and Meccano.
-image: img/reflektor-full.jpg
+image: /img/reflektor-full.jpg
 image_alt: Reflektor, an electromechanical game with mirrors, a laser and red and green Meccano pieces
 description: Reflektor, an electromechanical game where you align mirrors to guide a laser to the goal.
 links:

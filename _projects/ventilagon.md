@@ -3,7 +3,7 @@ title: Super Ventilagon
 order: 2
 years: 2015
 tagline: The spinning-fan game that Ventilastation grew out of.
-image: img/projects/ventilagon.jpg
+image: /img/projects/ventilagon.jpg
 image_position: 25% 50%
 image_alt: Super Ventilagon glowing purple on a spinning fan while a spectator watches
 description: Super Ventilagon, an electromechanical game where you steer a ship through a maze of light on a spinning fan.

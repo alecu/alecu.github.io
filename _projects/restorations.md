@@ -3,7 +3,7 @@ title: Restorations
 order: 5
 years: Ongoing
 tagline: Bringing vintage computers back to life, for my collection and for EspacioTec.
-image: img/projects/restorations.jpg
+image: /img/projects/restorations.jpg
 image_position: 50% 28%
 image_alt: A Microdigital TK85 connected to a Grundig television that shows a screen filled with the word ALECU
 description: Vintage computer restorations for alecu's collection and for EspacioTec, a computing museum in Bahía Blanca. Apple Lisa, Virtuality 1000CS, and more on the bench.
