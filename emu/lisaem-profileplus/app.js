@@ -1,0 +1,1005 @@
+// LisaEm Web: browser front end for the LisaEm core (WebAssembly).
+import { Lisa, KEYMAP, SCREEN_W, SCREEN_H } from './js/lisa.js';
+import { Display, ASPECTS, PRESETS, EDGES } from './display.js';
+import { idbGet, idbPut, idbDel } from './store.js';
+import { TEMPLATES, templateFor } from './keypads.js';
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('screen');
+const display = new Display(canvas);
+$('renderer').textContent = display.renderer;
+
+let lisa = null;              // current machine (null until first boot)
+let floppy = null;            // { name, bytes }
+let profile = null;           // { name, bytes }
+let rom = null;               // { name, rom: Uint8Array | {lo, hi} }
+let bootFrom = null;          // 'floppy' | 'profile' | 'menu' (the ROM's startup menu): what Power on starts
+let screenW = SCREEN_W, screenH = SCREEN_H;   // current guest display size (XL ROMs differ)
+let paused = false;
+let speed = 1;
+let stopped = false;          // machine halted (powered off / fatal)
+let lastTs = 0;
+const held = new Set();       // raw keys currently down
+const tpl = { id: '', page: 0, ready: false };   // the on-screen key template in use, see keypads.js
+
+// ---- small helpers ----------------------------------------------------------------------
+
+function log(msg) {
+  const el = $('log');
+  el.textContent += (el.textContent ? '\n' : '') + msg;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setEnabled(on) {
+  for (const id of ['btnPause', 'btnShot', 'btnType', 'btnSaveState']) $(id).disabled = !on;
+  renderPower();
+}
+
+// The picture dims and fades with the Lisa's contrast latch unless the Contrast switch is off.
+function drawScreen() { display.present(lisa.screen(), $('contrast').checked ? lisa.brightness : 1); }
+
+// ---- display settings (remembered per browser) -------------------------------------------
+
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('lisaem-profileplus.' + k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('lisaem-profileplus.' + k, JSON.stringify(v)); } catch { /* private mode etc. */ } },
+};
+$('aspect').innerHTML = Object.entries(ASPECTS).map(([k, a]) => `<option value="${k}">${a.label}</option>`).join('');
+const sliders = { curve: 'fxCurve', scan: 'fxScan', glow: 'fxGlow', mask: 'fxMask', vignette: 'fxVig', border: 'fxBorder' };
+// the Edge slider has named stops: A hard (0), B crisp (1.5, the default), C soft (4)
+function showEdge(v) {
+  v = Number.isFinite(+v) ? +v : EDGES.B; $('fxEdge').value = v;
+  const near = (x) => Math.abs(v - x) < 0.025;
+  const name = near(EDGES.A) ? 'A. Hard' : near(EDGES.B) ? 'B. Crisp' : near(EDGES.C) ? 'C. Soft' : `${v.toFixed(2).replace(/0$/, '')} px`;
+  $('edgeName').textContent = `Edge: ${name}  (stops: A hard, B crisp, C soft)`;
+}
+function syncFxUI(fx) { for (const [k, id] of Object.entries(sliders)) $(id).value = fx[k]; showEdge(fx.edge); }
+function applyFx(preset, fx) {
+  $('fxPreset').value = preset; display.setEffects(fx); syncFxUI(display.fx);
+  store.set('fx', { preset, fx: display.fx });
+}
+{
+  const saved = store.get('fx', { preset: 'soft', fx: PRESETS.soft });
+  // Named presets follow the current defaults; custom settings and the independent Edge choice survive.
+  const preset = saved?.preset === 'custom' || Object.hasOwn(PRESETS, saved?.preset) ? saved.preset : 'soft';
+  const fx = preset === 'custom' ? saved.fx : { ...PRESETS[preset], edge: saved?.fx?.edge ?? EDGES.B };
+  const aspect = ASPECTS[store.get('aspect', 'lisa')] ? store.get('aspect', 'lisa') : 'lisa';
+  $('aspect').value = aspect; display.setAspect(aspect);
+  applyFx(preset, fx);
+  if (store.get('panel', true) === false) { $('btnPanel').setAttribute('aria-expanded', 'false'); document.querySelector('.layout').classList.add('nopanel'); }
+}
+const narrow = matchMedia('(max-width: 900px)');
+const coarse = matchMedia('(pointer: coarse)');
+function setPanel(show, persist = true) {
+  document.querySelector('.layout').classList.toggle('nopanel', !show);
+  $('btnPanel').setAttribute('aria-expanded', String(show));
+  if (persist) store.set('panel', show);
+}
+$('aspect').addEventListener('change', (e) => { display.setAspect(e.target.value); store.set('aspect', e.target.value); });
+$('contrast').checked = store.get('contrast', true);
+$('contrast').addEventListener('change', (e) => { store.set('contrast', e.target.checked); if (lisa) drawScreen(); });
+$('fxPreset').addEventListener('change', (e) => { if (e.target.value !== 'custom') applyFx(e.target.value, PRESETS[e.target.value]); else applyFx('custom', display.fx); });
+// the edge style is its own choice: changing a preset keeps it
+$('fxEdge').addEventListener('input', (e) => { display.setEffects({ edge: +e.target.value }); showEdge(+e.target.value); store.set('fx', { preset: $('fxPreset').value, fx: display.fx }); });
+for (const [k, id] of Object.entries(sliders)) $(id).addEventListener('input', (e) => applyFx('custom', { [k]: +e.target.value }));
+$('btnPanel').addEventListener('click', () => setPanel(document.querySelector('.layout').classList.contains('nopanel')));
+
+function updateStatus() {
+  const on = !!lisa && !stopped;
+  $('chipPower').textContent = !lisa ? 'Off' : stopped ? 'Stopped' : paused ? 'Paused' : 'Running';
+  $('chipPower').classList.toggle('on', on && !paused);
+  $('chipTime').textContent = lisa ? `${(lisa.time / 1000).toFixed(1)} s` : '0.0 s';
+  const osNames = ['ROM', 'Office System', 'Lisa Test', 'MacWorks', 'Monitor', 'Xenix', 'UniPlus', 'UniPlus Sunix'];
+  $('chipOS').textContent = lisa ? (osNames[lisa._c('running_os', 'number', [], [])] ?? 'Unknown OS') : '—';
+}
+
+// ---- machine lifecycle ------------------------------------------------------------------
+
+async function newMachine() {
+  if (!bootFrom) return false;
+  // Do all the awaiting before the machine exists: once `lisa` is set the render loop runs it, and an
+  // un-booted machine would execute garbage from address 0.
+  const profileBytes = profile ? await diskBytes('profile', profile) : null;
+  const floppyBytes = floppy ? await diskBytes('floppy', floppy) : null;
+  lisa = await Lisa.create({ ramKB: 1024, clock: 'now' });
+  if (profile && !lisa.mountProfile(profileBytes)) log('Could not mount the hard disk image.');
+  if (floppy && !lisa.insertFloppy(floppyBytes)) { log('That does not look like a valid floppy image.'); lisa = null; return false; }
+  baseline.profile = profile ? lisa.diskHash(0) : 0;
+  baseline.floppy = floppy ? lisa.diskHash(1) : 0;
+  refreshDiskButtons();
+  let ok;
+  if (rom) {
+    try {
+      const info = lisa.loadROM(rom.rom);
+      log(`ROM ${info.version} (${info.format})${info.checksumOk ? '' : ': checksum differs from a stock ROM, it may misbehave'}`);
+      ok = lisa.powerOn({ boot: bootFrom === 'menu' ? 'none' : bootFrom });
+    } catch (e) { log(String(e.message || e)); lisa = null; return false; }
+  } else {
+    ok = bootFrom === 'profile' ? lisa.bootProfile() : lisa.bootFloppy();
+  }
+  flushMessages();
+  if (!ok) { stopped = true; return false; }
+  stopped = false;
+  remoteTick = () => {};
+  if (lisa.pp) import('./remote.js').then(({ mountRemotePanel }) => { remoteTick = mountRemotePanel(document, lisa); });
+  const s = lisa.screen(); screenW = s.width; screenH = s.height;
+  display.setAspect(screenW === SCREEN_W ? $('aspect').value : screenW / screenH); // XL screens have square-ish pixels
+  $('hint').classList.add('gone'); $('start').hidden = true;
+  paused = false; $('btnPause').textContent = 'Pause';
+  setEnabled(true);
+  if (narrow.matches) { setPanel(false, false); canvas.scrollIntoView({ block: 'nearest' }); }
+  return true;
+}
+
+function flushMessages() {
+  if (!lisa) return;
+  for (const m of lisa.messages()) log(m.replace(/^dialog: /, ''));
+  const c = lisa.consoleRead();
+  if (c) log('console: ' + c.trim());
+}
+
+function handleStatus(st) {
+  if (st.fatal || st.poweredOff || st.rebooted) {
+    stopped = true;
+    flushMessages();
+    log(st.fatal ? 'The emulated machine stopped (fatal error).' : st.rebooted ? 'The Lisa restarted.' : 'The Lisa powered off.');
+  }
+}
+
+// ---- main loop --------------------------------------------------------------------------
+
+// Sound: the core logs every speaker register write with its emulated timestamp and renders PCM from that
+// (Lisa.audioRender); an AudioWorklet plays it back. Only at 1x: at other speeds the audio is rendered and
+// discarded (so the log stays bounded) because pitch-shifted PCM would just be noise.
+const sound = { ctx: null, node: null, loading: null, forMachine: null, stats: null };
+
+async function ensureSound() {
+  if (sound.node) return true;
+  sound.loading ??= (async () => {
+    try {
+      sound.ctx ??= new AudioContext({ latencyHint: 'interactive' });
+      await sound.ctx.audioWorklet.addModule(new URL('audio-worklet.js', import.meta.url));
+      const node = new AudioWorkletNode(sound.ctx, 'lisa-speaker', { numberOfInputs: 0, outputChannelCount: [1], processorOptions: { startMs: 40, maxMs: 250 } });
+      node.port.onmessage = (e) => { sound.stats = e.data; };
+      node.connect(sound.ctx.destination);
+      sound.node = node;
+      return true;
+    } catch (e) {
+      log('Sound is unavailable: ' + (e.message || e));
+      $('sound').checked = false;
+      return false;
+    } finally { sound.loading = null; }
+  })();
+  return sound.loading;
+}
+
+// Sound defaults to on (remembered after that). Browsers keep audio suspended until the page has had a
+// click or key press, so the context is created up front and resumed by the first gesture.
+$('sound').checked = store.get('sound', true);
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* Safari only: sound plays even with the ringer switch off */ }
+for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
+  addEventListener(ev, () => { const st = sound.ctx?.state; if ($('sound').checked && (st === 'suspended' || st === 'interrupted')) sound.ctx.resume().catch(() => {}); }, { capture: true });
+}
+
+function pumpSound() {
+  if (!lisa) return;
+  if ($('sound').checked && !sound.node) { ensureSound(); return; }
+  if (!$('sound').checked || !sound.node) {
+    if (sound.forMachine === lisa) { lisa.audioStop(); sound.forMachine = null; }
+    return;
+  }
+  if (sound.forMachine !== lisa) { lisa.audioStart(sound.ctx.sampleRate); sound.forMachine = lisa; }
+  const pcm = lisa.audioRender();
+  if (pcm.length && speed === 1 && sound.ctx.state === 'running') sound.node.port.postMessage(pcm, [pcm.buffer]);
+}
+
+// Development builds with the ProfilePlus mock: the Remote panel's refresh (site/remote.js).
+let remoteTick = () => {};
+
+function frame(ts) {
+  const dt = Math.min(ts - (lastTs || ts), 100);
+  lastTs = ts;
+  if (lisa && !paused && !stopped) {
+    handleStatus(lisa.run(dt * speed));
+    touchTick(ts);
+    drawScreen();
+    pumpSound();
+    remoteTick();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setInterval(updateStatus, 250);
+setInterval(flushMessages, 1000);
+
+// ---- disks and the power button ---------------------------------------------------------
+//
+// Loading a disk only fills its slot; Power on (or dropping a file on the screen) starts the machine.
+
+const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+const IS_ROM_NAME = /\.(bin|rom|lo|hi)$/i;
+const HARD_DISK_BYTES = 2 * 1024 * 1024;       // floppies are under 1 MB, ProFiles are 5 MB and up
+
+/** Which slot a file belongs in, judged by name and size. */
+const classify = (name, size) => (IS_ROM_NAME.test(name) ? 'rom' : size > HARD_DISK_BYTES ? 'profile' : 'floppy');
+
+function availableDevices() {
+  return [floppy && 'floppy', profile && 'profile', rom && 'menu'].filter(Boolean);
+}
+
+/** Keep the boot-from choice valid; `prefer` is the device the user just added. */
+function chooseBootFrom(prefer) {
+  const have = availableDevices();
+  if (prefer && have.includes(prefer)) bootFrom = prefer;
+  else if (!have.includes(bootFrom)) bootFrom = have[0] ?? null;
+}
+
+function renderPower() {
+  const have = availableDevices(), labels = { floppy: 'Floppy disk', profile: 'Hard disk (ProFile)', menu: "The ROM's startup menu" };
+  const sel = $('bootFrom');
+  sel.innerHTML = have.map((d) => `<option value="${d}">${labels[d]}</option>`).join('');
+  sel.disabled = have.length < 2;
+  $('bootFromRow').hidden = have.length < 2;
+  if (bootFrom) sel.value = bootFrom;
+  $('btnPower').disabled = !bootFrom;
+  $('btnPower').textContent = lisa ? 'Restart' : 'Power on';
+  const via = rom ? 'through the boot ROM' : 'directly, with no ROM';
+  $('bootHint').textContent = !bootFrom ? 'Add a floppy or a hard disk to begin.'
+    : bootFrom === 'menu' ? 'Powers on through the boot ROM and stops at its startup menu.'
+    : `${lisa ? 'Restarts' : 'Starts'} the ${bootFrom === 'floppy' ? 'floppy' : 'hard disk'} ${via}.`;
+}
+
+function renderSlots() {
+  // textContent only: file names come from the user's disk and must never be parsed as HTML
+  const set = (nameId, sizeId, m, size) => {
+    $(nameId).textContent = m ? m.name : (nameId === 'romName' ? 'none' : 'empty');
+    $(nameId).classList.toggle('empty', !m);
+    $(nameId).title = m ? m.name : '';
+    $(sizeId).textContent = m && size ? size(m) : '';
+  };
+  set('floppyName', 'floppySize', floppy, (m) => fmtSize(m.bytes.length));
+  templateForDisk(floppy?.name);
+  set('profileName', 'profileSize', profile, (m) => fmtSize(m.bytes.length));
+  set('romName', 'romSize', rom, (m) => (m.rom.lo ? `${fmtSize(m.rom.lo.length + m.rom.hi.length)}, lo + hi` : fmtSize(m.rom.length)));
+  $('btnEjectFloppy').disabled = !floppy;
+  $('btnEjectProfile').disabled = !profile;
+  $('btnForgetRom').disabled = !rom;
+  $('romState').textContent = rom ? 'loaded' : 'none';
+  refreshDiskButtons();
+  chooseBootFrom();
+  renderPower();
+}
+
+/** Show a button as busy while an async job runs, and always put it back. */
+async function busy(btn, label, job) {
+  const was = btn.textContent;
+  btn.disabled = true; btn.textContent = label;
+  try { return await job(); } finally { btn.textContent = was; btn.disabled = false; }
+}
+
+async function readBytes(file) { return new Uint8Array(await file.arrayBuffer()); }
+
+async function takeFloppy(file) {
+  floppy = { name: file.name, bytes: await readBytes(file) };
+  chooseBootFrom('floppy'); renderSlots(); log(`Floppy: ${file.name}`);
+}
+async function takeProfile(file) {
+  profile = { name: file.name, bytes: await readBytes(file) };
+  chooseBootFrom('profile'); renderSlots(); log(`Hard disk: ${file.name}`);
+}
+
+$('btnFloppy').addEventListener('click', () => $('fileFloppy').click());
+$('btnProfile').addEventListener('click', () => $('fileProfile').click());
+$('fileFloppy').addEventListener('change', (e) => { if (e.target.files[0]) takeFloppy(e.target.files[0]); e.target.value = ''; });
+$('fileProfile').addEventListener('change', (e) => { if (e.target.files[0]) takeProfile(e.target.files[0]); e.target.value = ''; });
+$('btnEjectFloppy').addEventListener('click', () => { floppy = null; renderSlots(); log('Floppy removed (takes effect at the next power on).'); });
+$('btnEjectProfile').addEventListener('click', () => { profile = null; renderSlots(); log('Hard disk removed (takes effect at the next power on).'); });
+$('bootFrom').addEventListener('change', (e) => { bootFrom = e.target.value; renderPower(); });
+$('btnPower').addEventListener('click', async () => {
+  $('btnPower').disabled = true;            // one machine at a time while it is being built
+  try { await newMachine(); } finally { renderPower(); }
+  canvas.focus();
+});
+
+// Drag and drop: onto a slot loads that slot; onto the screen sorts the files out and powers on.
+function dropTarget(el, handler) {
+  el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('drag'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag'));
+  el.addEventListener('drop', async (e) => { e.preventDefault(); el.classList.remove('drag'); await handler([...e.dataTransfer.files]); });
+}
+dropTarget($('slotFloppy'), async (fs) => fs[0] && takeFloppy(fs[0]));
+dropTarget($('slotProfile'), async (fs) => fs[0] && takeProfile(fs[0]));
+dropTarget($('slotRom'), async (fs) => takeRom(fs));
+dropTarget($('screenWrap'), async (fs) => {
+  const roms = fs.filter((f) => classify(f.name, f.size) === 'rom');
+  if (roms.length) await takeRom(roms);
+  for (const f of fs.filter((x) => !roms.includes(x))) await (classify(f.name, f.size) === 'profile' ? takeProfile(f) : takeFloppy(f));
+  await newMachine(); canvas.focus();
+});
+
+// Disk images and ROMs served by `serve.mjs --media <dir>`, or bundled by build-pages (optional).
+// Resolves to { list, insert(disk) } (an empty list when there is no media folder).
+const media = (async () => {
+  const none = () => {
+    $('localDisks').replaceChildren(new Option('No bundled images available', ''));
+    return { list: [], insert: async () => {} };
+  };
+  try {
+    const r = await fetch('media/index.json');
+    if (!r.ok) return none();
+    const all = await r.json();
+    const roms = all.filter((d) => classify(d.name, d.size) === 'rom'), list = all.filter((d) => classify(d.name, d.size) !== 'rom');
+    const fetchFile = async (d) => new File([await (await fetch('media/' + encodeURIComponent(d.name))).arrayBuffer()], d.name);
+    if (roms.length) {
+      $('btnFolderRom').hidden = false;
+      $('btnFolderRom').addEventListener('click', () => busy($('btnFolderRom'), 'Loading…', async () => takeRom(await Promise.all(roms.map(fetchFile)))));
+    }
+    const insert = async (d) => {
+      $('localDisks').value = d.name;
+      const f = await fetchFile(d);
+      await (classify(d.name, d.size) === 'profile' ? takeProfile(f) : takeFloppy(f));
+    };
+    if (!list.length) return none();
+    $('localDisks').replaceChildren(...list.map((d) => new Option(`${d.name} (${fmtSize(d.size)}, ${classify(d.name, d.size) === 'profile' ? 'hard disk' : 'floppy'})`, d.name)));
+    $('localDisks').disabled = false;
+    $('btnInsertLocal').disabled = false;
+    $('btnInsertLocal').addEventListener('click', () => busy($('btnInsertLocal'), 'Loading…', () => insert(list.find((x) => x.name === $('localDisks').value))));
+    return { list, insert };
+  } catch { return none(); /* no media server */ }
+})();
+
+// ---- keeping disk changes ---------------------------------------------------------------
+//
+// The guest writes to its disks (the Office System updates its ProFile as it runs). Those changes are
+// saved to IndexedDB, keyed by disk name and size, and used instead of the original bytes the next time
+// the same disk is loaded.
+
+const baseline = { profile: 0, floppy: 0 };   // fingerprint of each disk when last loaded/saved
+const diskKey = (kind, m) => `${kind}:${m.name}:${m.bytes.length}`;
+
+async function diskBytes(kind, m) {
+  if ($('keepChanges').checked) {
+    const saved = await idbGet(diskKey(kind, m));
+    if (saved?.bytes && saved.bytes.byteLength === m.bytes.length) {
+      log(`Using your saved changes to ${m.name} (${new Date(saved.savedAt).toLocaleString()})`);
+      return new Uint8Array(saved.bytes);
+    }
+  }
+  return m.bytes;
+}
+
+function refreshDiskButtons() {
+  $('btnDlProfile').disabled = !(lisa && profile);
+  $('btnDlFloppy').disabled = !(lisa && floppy);
+  $('btnRevert').disabled = !(profile || floppy);
+}
+
+let saving = false;
+async function saveDisks() {
+  if (!lisa || saving || !$('keepChanges').checked) return;
+  saving = true;
+  try {
+    for (const [kind, which, m] of [['profile', 0, profile], ['floppy', 1, floppy]]) {
+      if (!m) continue;
+      // The ProfilePlus mock can switch the hard disk to another image (Cameo/Aphid IMAGE:); its bytes
+      // must not be saved under this image's name.
+      if (kind === 'profile' && lisa.pp && lisa.pp.aphidStats().imageSwitches > 0) continue;
+      const h = lisa.diskHash(which);
+      if (!h || h === baseline[kind]) continue;
+      const bytes = kind === 'profile' ? lisa.exportProfile() : lisa.exportFloppy();
+      if (bytes && await idbPut(diskKey(kind, m), { name: m.name, bytes: bytes.buffer, savedAt: Date.now() })) {
+        baseline[kind] = h;
+        $('saveState').textContent = `saved ${new Date().toLocaleTimeString()}`;
+      }
+    }
+  } finally { saving = false; }
+}
+setInterval(saveDisks, 15000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveDisks(); });
+window.addEventListener('pagehide', saveDisks);
+function renderDiskPersistence() {
+  $('diskPersistence').textContent = $('keepChanges').checked
+    ? 'Disk changes saved automatically in this browser.'
+    : 'Disk changes are not saved in this browser.';
+}
+$('keepChanges').addEventListener('change', () => { store.set('keep', $('keepChanges').checked); renderDiskPersistence(); });
+$('keepChanges').checked = store.get('keep', true);
+renderDiskPersistence();
+
+function download(bytes, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('btnDlProfile').addEventListener('click', () => { const b = lisa?.exportProfile(); if (b) download(b, profile.name); });
+$('btnDlFloppy').addEventListener('click', () => { const b = lisa?.exportFloppy(); if (b) download(b, floppy.name); });
+
+let revertArmed = 0;
+$('btnRevert').addEventListener('click', async () => {
+  if (!revertArmed) { // two clicks, so it cannot happen by accident
+    revertArmed = setTimeout(() => { revertArmed = 0; $('btnRevert').textContent = 'Revert disks'; }, 4000);
+    $('btnRevert').textContent = 'Click again to confirm'; return;
+  }
+  clearTimeout(revertArmed); revertArmed = 0; $('btnRevert').textContent = 'Revert disks';
+  for (const [kind, m] of [['profile', profile], ['floppy', floppy]]) if (m) await idbDel(diskKey(kind, m));
+  $('saveState').textContent = 'reverted'; log('Saved disk changes discarded; starting from the original disks.');
+  const was = $('keepChanges').checked; $('keepChanges').checked = false;
+  await newMachine(); $('keepChanges').checked = was; canvas.focus();
+});
+
+// ---- saving the whole machine ------------------------------------------------------------
+
+function sessionStatus(message) {
+  $('sessionStatus').textContent = message;
+  $('sessionStatus').hidden = false;
+  log(message);
+}
+$('btnSaveState').addEventListener('click', async () => {
+  if (!lisa) return;
+  $('btnSaveState').disabled = true;
+  try {
+    const bytes = await lisa.serialize();
+    const ok = await idbPut('state', { bytes: bytes.buffer, savedAt: Date.now(), at: lisa.time });
+    sessionStatus(ok ? `Saved machine state (${(bytes.length / 1048576).toFixed(1)} MB, ${(lisa.time / 1000).toFixed(0)} s into the run).` : 'Could not save state (storage unavailable).');
+  } finally { $('btnSaveState').disabled = false; }
+});
+$('btnLoadState').addEventListener('click', async () => {
+  const saved = await idbGet('state');
+  if (!saved) { sessionStatus('No saved state in this browser.'); return; }
+  lisa = await Lisa.deserialize(new Uint8Array(saved.bytes));
+  stopped = false; paused = false; $('btnPause').textContent = 'Pause';
+  const s = lisa.screen(); screenW = s.width; screenH = s.height;
+  display.setAspect(screenW === SCREEN_W ? $('aspect').value : screenW / screenH);
+  $('hint').classList.add('gone'); $('start').hidden = true; setEnabled(true); drawScreen();
+  sessionStatus(`Resumed saved state from ${new Date(saved.savedAt).toLocaleString()}.`);
+});
+
+// ---- boot ROM ---------------------------------------------------------------------------
+
+const b64 = {
+  enc: (u8) => { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s); },
+  dec: (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0)),
+};
+async function takeRom(files, label) {
+  files = [...files];
+  if (files.length === 2) { // a lo/hi EPROM pair, told apart by file name
+    // lo = odd-addressed bytes (341-0176 / 341-0346 / .lo), hi = even-addressed bytes (341-0175 / 341-0347 / .hi)
+    const lo = files.find((f) => /\.lo$|0176|0346|-176-/i.test(f.name)), hi = files.find((f) => /\.hi$|0175|0347|-175-/i.test(f.name));
+    if (!lo || !hi) { log('Two ROM files given: I could not tell which is the low and which the high half (expected .lo/.hi or 341-0175/0176 in the names).'); return; }
+    rom = { name: label ?? `${lo.name} + ${hi.name}`, rom: { lo: new Uint8Array(await lo.arrayBuffer()), hi: new Uint8Array(await hi.arrayBuffer()) } };
+    store.set('rom', { name: rom.name, lo: b64.enc(rom.rom.lo), hi: b64.enc(rom.rom.hi) });
+  } else if (files.length === 1) {
+    rom = { name: files[0].name, rom: new Uint8Array(await files[0].arrayBuffer()) };
+    store.set('rom', { name: rom.name, bin: b64.enc(rom.rom) });
+  } else { log('Choose one ROM file, or a .lo and a .hi pair.'); return; }
+  chooseBootFrom(); renderSlots(); log(`Boot ROM ${rom.name} chosen`);
+}
+{
+  const saved = store.get('rom', null);
+  try {
+    if (saved) rom = { name: saved.name, rom: saved.bin ? b64.dec(saved.bin) : { lo: b64.dec(saved.lo), hi: b64.dec(saved.hi) } };
+  } catch { rom = null; }
+}
+$('btnRom').addEventListener('click', () => $('fileRom').click());
+$('fileRom').addEventListener('change', (e) => { takeRom(e.target.files); e.target.value = ''; });
+$('btnForgetRom').addEventListener('click', () => {
+  rom = null; store.set('rom', null);
+  $('autoRom').checked = false; store.set('autoRom', false);   // forgetting means "don't bring it back by itself"
+  renderSlots(); log('Boot ROM forgotten. Automatic download is off.');
+});
+
+// ---- downloading a boot ROM ---------------------------------------------------------------
+//
+// The files come from the server this page was loaded from (serve.mjs), which fetches them from the
+// catalog's source, checks each against a pinned SHA-256 and caches it. A page served some other way has no
+// /rom/ endpoint, and then none of this is shown.
+
+let romCatalog = null;
+$('autoRom').checked = store.get('autoRom', true);
+$('autoRom').addEventListener('change', () => store.set('autoRom', $('autoRom').checked));
+
+function showRomNote() {
+  const r = romCatalog?.roms.find((x) => x.id === $('romChoice').value);
+  $('romNote').textContent = r ? r.note : '';
+}
+
+async function fetchRom(id) {
+  const r = romCatalog.roms.find((x) => x.id === id);
+  if (!r) return false;
+  log(`Downloading boot ROM ${r.label} from ${new URL(romCatalog.source).host}…`);
+  try {
+    const get = async (f) => {
+      const res = await fetch('rom/' + encodeURIComponent(f.file));
+      if (!res.ok) throw new Error(await res.text());
+      return new File([await res.arrayBuffer()], f.file);
+    };
+    const [lo, hi] = await Promise.all([get(r.lo), get(r.hi)]);
+    await takeRom([lo, hi], `${r.label} (${new URL(romCatalog.source).host})`);
+    return true;
+  } catch (e) {
+    log(`Could not download the boot ROM: ${e.message}. Disks will boot without one.`);
+    return false;
+  }
+}
+
+$('btnFetchRom').addEventListener('click', () => busy($('btnFetchRom'), 'Downloading…', () => fetchRom($('romChoice').value)));
+$('romChoice').addEventListener('change', showRomNote);
+
+const romReady = (async () => {
+  try {
+    const r = await fetch('rom/index.json');
+    if (!r.ok) return;
+    romCatalog = await r.json();
+    $('romChoice').innerHTML = romCatalog.roms.map((x) => `<option value="${x.id}">${x.label}</option>`).join('');
+    $('romChoice').value = romCatalog.default;
+    $('romHost').textContent = new URL(romCatalog.source).host; $('romFrom').hidden = false;
+    $('romDefault').hidden = false;
+    $('btnFetchRom').disabled = !romCatalog.fetchAllowed;
+    showRomNote();
+    if (!rom && $('autoRom').checked && romCatalog.fetchAllowed) await fetchRom(romCatalog.default);
+  } catch { /* no ROM endpoint: a statically hosted page */ }
+})();
+
+// ---- a link that opens a disk: ?disk=<name> -----------------------------------------------------------
+//
+// Inserts a disk from the media folder, once the boot ROM (if any) has arrived, and powers on when the Play
+// button over the screen is clicked. The name is a disk's file name, or any part of it: then the last match by
+// name (numbers compared as numbers) is taken, so ?disk=sentinel stays a good link when a newer build replaces
+// the disk. Only disks in the media folder open.
+//
+// Browsers keep a page silent until it has been clicked or a key pressed, so a machine that powered on by
+// itself would lose whatever it plays before the first click (The Sentinel's title music). The Play click
+// starts the sound first, and the disk loads while the button waits.
+
+(async () => {
+  const want = new URLSearchParams(location.search).get('disk');
+  if (!want) return;
+  const play = $('btnPlay');
+  const done = () => { $('start').hidden = true; if (!lisa) $('hint').classList.remove('gone'); };
+  $('hint').classList.add('gone'); $('start').hidden = false;
+  play.focus({ preventScroll: true });   // Return or Space plays, too
+  const clicked = new Promise((resolve) => play.addEventListener('click', () => {
+    // in the click itself: an audio context created or resumed later can stay suspended (Safari)
+    if ($('sound').checked) { ensureSound(); sound.ctx?.resume().catch(() => {}); }
+    play.disabled = true; play.setAttribute('aria-busy', 'true'); $('playLabel').textContent = 'Starting…';
+    resolve();
+  }, { once: true }));
+  try {
+    const { list, insert } = await media;
+    const d = list.find((x) => x.name === want) ?? list.filter((x) => x.name.toLowerCase().includes(want.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).at(-1);
+    if (!d) { log(`The link asks for a disk named “${want}”, which is not in the media folder.`); return; }
+    $('startName').textContent = d.name;
+    await romReady;
+    await insert(d);
+    await clicked;
+    if ($('sound').checked) await ensureSound();
+    if (!lisa) await newMachine();   // unless Power on in Controls already started it
+    canvas.focus();
+  } catch (e) {
+    log(`Could not open the disk the link asks for: ${e.message || e}`);
+  } finally { done(); }
+})();
+
+// ---- collapsible cards, remembered per browser ------------------------------------------------
+
+{
+  // Start the Essentials groups collapsed instead of inheriting the old sidebar's open cards.
+  const open = store.get('essentials.cards', {});
+  for (const d of document.querySelectorAll('details[data-card]')) {
+    if (open[d.dataset.card] !== undefined) d.open = open[d.dataset.card];
+    d.addEventListener('toggle', () => { const s = store.get('essentials.cards', {}); s[d.dataset.card] = d.open; store.set('essentials.cards', s); });
+  }
+}
+renderSlots();
+
+// ---- machine controls -------------------------------------------------------------------
+
+$('btnPause').addEventListener('click', () => { paused = !paused; $('btnPause').textContent = paused ? 'Resume' : 'Pause'; });
+$('speed').addEventListener('change', (e) => { speed = +e.target.value; sound.node?.port.postMessage('flush'); });
+$('sound').addEventListener('change', async (e) => {
+  store.set('sound', e.target.checked);
+  if (e.target.checked && await ensureSound()) { await sound.ctx.resume(); sound.node.port.postMessage('flush'); sound.forMachine = null; }
+  else if (sound.ctx) sound.node?.port.postMessage('flush');
+});
+$('btnType').addEventListener('click', () => { lisa?.type($('pasteText').value); canvas.focus(); });
+$('btnShot').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lisa.screenshotPNG()], { type: 'image/png' }));
+  a.download = `lisa-${Date.now()}.png`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+// ---- keyboard & mouse -------------------------------------------------------------------
+
+canvas.addEventListener('keydown', (e) => {
+  const code = KEYMAP[e.code];
+  if (code === undefined || !lisa) return;
+  e.preventDefault();
+  if (e.repeat || held.has(code)) return;
+  held.add(code); lisa.key(code, true);
+});
+canvas.addEventListener('keyup', (e) => {
+  const code = KEYMAP[e.code];
+  if (code === undefined || !lisa) return;
+  e.preventDefault();
+  if (held.delete(code)) lisa.key(code, false);
+});
+canvas.addEventListener('blur', () => { for (const c of held) lisa?.key(c, false); held.clear(); });
+
+function lisaXY(e) {
+  // Through the display so aspect, scaling and CRT curvature are all accounted for.
+  return display.toSource(e.clientX, e.clientY, screenW, screenH);
+}
+// Touch works like a laptop trackpad with tap-to-click, except that the pointer sits under the finger.
+// Touching and moving (or holding still) only moves the pointer, so a game's sights can be aimed without
+// firing. A quick tap clicks where it lands. Two quick taps double-click, and a tap followed by a touch that
+// moves or stays down presses and drags (an icon, a window, a menu). A lone tap therefore waits a moment to
+// see whether a second touch follows, unless the disk's key template says the program never drags (The
+// Sentinel), when it clicks at once.
+//
+// The Lisa's mouse only gets *relative* motion from the COPS, so the guest's pointer takes a moment to catch
+// up with the finger, and from across the screen that takes the Office System most of a second. Each button
+// change waits for the pointer to arrive (or to stop short of it, for a program that keeps its own pointer),
+// goes to the COPS as its button code, and is held for 100 ms of Lisa time so the guest sees it.
+const TAP_MS = 250, TAP_SLOP = 10, DOUBLE_MS = 300, DOUBLE_SLOP = 30, DRAG_HOLD_MS = 300;   // host ms, CSS px
+const SETTLE_MS = 300, ARRIVE_MAX_MS = 3000, PRESS_MS = 100, GAP_MS = 60;                       // host ms, Lisa ms
+let finger = null;            // the touch on the screen: { id, cx, cy, t0, x, y, moved, second, dragging }
+let lastTap = null;           // a tap waiting to see if a second one follows: { x, y, cx, cy, t }
+const btnQ = [];              // button changes still to send, in order: { down, x, y }
+let btnStep = null;           // the change waiting for the pointer to arrive
+let btnAt = -Infinity;        // Lisa time of the last button change
+let aim = { x: -1, y: -1, t: 0 };   // where the pointer was last sent, and when
+let still = { x: -1, y: -1, t: 0 }; // where the guest's pointer is, and since when it has stayed there
+let follow = null;            // where the finger went while a button change held the pointer still
+const touchDrags = () => TEMPLATES[tpl.id]?.touch?.drag !== false;
+function aimAt(x, y) { if (x !== aim.x || y !== aim.y) { aim = { x, y, t: performance.now() }; lisa.mouseMove(x, y); } }
+function pointTo(x, y) { if (btnStep || btnQ.length) follow = [x, y]; else aimAt(x, y); }
+function click(x, y) { btnQ.push({ down: true, x, y }, { down: false, x, y }); }
+function startDrag() { finger.dragging = true; btnQ.push({ down: true, x: lastTap.x, y: lastTap.y }); lastTap = null; }
+function touchTick(now) {
+  if (!lisa) return;
+  if (lastTap && !finger && now - lastTap.t > DOUBLE_MS) { click(lastTap.x, lastTap.y); lastTap = null; }
+  if (finger?.second && !finger.dragging && now - finger.t0 >= DRAG_HOLD_MS) startDrag();   // tap, then hold
+  if (!btnStep && btnQ.length) { btnStep = btnQ.shift(); aimAt(btnStep.x, btnStep.y); }
+  if (btnStep) {
+    const s = btnStep, q = lisa.pointer();
+    if (q.x !== still.x || q.y !== still.y) still = { x: q.x, y: q.y, t: now };
+    const arrived = (Math.abs(q.x - s.x) <= 3 && Math.abs(q.y - s.y) <= 3)
+      || (now - still.t >= SETTLE_MS && now - aim.t >= SETTLE_MS) || now - aim.t >= ARRIVE_MAX_MS;
+    if (!arrived || lisa.time - btnAt < (s.down ? GAP_MS : PRESS_MS)) return;
+    copsButton(s.down); btnAt = lisa.time; btnStep = null;
+    if (btnQ.length) return;
+  }
+  if (follow) { aimAt(...follow); follow = null; }
+}
+// Captured mouse. The absolute mouse (a hovering mouse or pen) is for a guest that tracks its own pointer (the Office System and
+// the other OSes the core recognises). A game with its own mouse code (The Sentinel) reads the COPS's relative
+// motion and button itself, and a demo with no mouse code must not be sent any, so for those the pointer is
+// locked to the screen and the host's motion is sent as it comes: counts, with the button as the COPS's own
+// button code (it is not a key, but travels the same way). Esc lets go (the browser's own rule for a locked pointer).
+const COPS_MOUSE_BUTTON = 0x06;
+let locked = false;           // the pointer is locked to the canvas
+let copsDown = false;         // the COPS mouse button is held, so it can be let go if the lock ends first
+const copsButton = (down) => { if (down !== copsDown && lisa) { copsDown = down; lisa.key(COPS_MOUSE_BUTTON, down); } };
+let rest = { x: 0, y: 0 };    // motion smaller than a Lisa pixel, carried to the next event
+const capturing = () => $('captureMouse').checked && !coarse.matches;
+document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === canvas; rest = { x: 0, y: 0 }; if (!locked) copsButton(false); });
+$('captureMouse').checked = store.get('captureMouse', false);
+$('captureNote').hidden = !$('captureMouse').checked;
+$('captureMouse').addEventListener('change', (e) => {
+  store.set('captureMouse', e.target.checked);
+  $('captureNote').hidden = !e.target.checked;
+  if (!e.target.checked && document.pointerLockElement === canvas) document.exitPointerLock();
+});
+function lockedMove(e) {
+  // Lisa pixels per CSS pixel at the middle of the screen, through the display so the aspect and zoom count.
+  const r = canvas.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const a = display.toSource(cx, cy, screenW, screenH), b = display.toSource(cx + 100, cy + 100, screenW, screenH);
+  rest.x += (e.movementX || 0) * (b[0] - a[0]) / 100;
+  rest.y += (e.movementY || 0) * (b[1] - a[1]) / 100;
+  for (let n = 0; n < 8; n++) {                            // one COPS packet carries up to ±127
+    const dx = Math.max(-127, Math.min(127, Math.trunc(rest.x))), dy = Math.max(-127, Math.min(127, Math.trunc(rest.y)));
+    if (!dx && !dy) break;
+    if (!lisa.mouseDelta(dx, dy)) break;                   // the COPS queue is full: keep the rest for the next event
+    rest.x -= dx; rest.y -= dy;
+  }
+}
+canvas.addEventListener('pointermove', (e) => {
+  if (locked && e.pointerType !== 'touch') { if (lisa) lockedMove(e); return; }
+  if (e.pointerType === 'touch') return touchMove(e);
+  const p = lisa && lisaXY(e); if (p) lisa.mouseMove(...p);
+});
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (e.pointerType === 'touch') return touchStart(e);
+  canvas.focus();
+  if (capturing()) {
+    if (!locked) { canvas.requestPointerLock?.()?.catch?.(() => {}); return; }   // the first click locks; it is not sent
+    if (e.button === 0) copsButton(true);
+    return;
+  }
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
+  const p = lisa && lisaXY(e); if (p) lisa.mouseDown(...p);
+});
+function touchStart(e) {
+  if (!lisa || !e.isPrimary || finger) return;             // one finger at a time
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* the pointer already ended */ }
+  const [x, y] = lisaXY(e), now = performance.now();
+  const second = !!lastTap && now - lastTap.t <= DOUBLE_MS && Math.hypot(e.clientX - lastTap.cx, e.clientY - lastTap.cy) <= DOUBLE_SLOP;
+  finger = { id: e.pointerId, cx: e.clientX, cy: e.clientY, t0: now, x, y, moved: false, second, dragging: false };
+  if (second) return;                                       // the pointer stays on the first tap until this one is decided
+  if (lastTap) { click(lastTap.x, lastTap.y); lastTap = null; }
+  pointTo(x, y);
+}
+function touchMove(e) {
+  const f = finger;
+  if (f?.id !== e.pointerId || !lisa) return;
+  [f.x, f.y] = lisaXY(e);
+  if (Math.hypot(e.clientX - f.cx, e.clientY - f.cy) > TAP_SLOP) f.moved = true;
+  if (f.second && !f.dragging) { if (!f.moved) return; startDrag(); }   // tap, then drag
+  pointTo(f.x, f.y);
+}
+function touchEnd(e) {
+  const f = finger;
+  if (f?.id !== e.pointerId) return;
+  finger = null;
+  if (!lisa) { lastTap = null; return; }
+  if (f.dragging) { btnQ.push({ down: false, x: f.x, y: f.y }); return; }   // drop where the finger left
+  if (e.type !== 'pointerup') { lastTap = null; return; }   // cancelled: no click
+  if (f.second) { click(lastTap.x, lastTap.y); click(lastTap.x, lastTap.y); lastTap = null; return; }   // double-click
+  if (f.moved || performance.now() - f.t0 > TAP_MS) return; // it only pointed
+  if (touchDrags()) lastTap = { x: f.x, y: f.y, cx: f.cx, cy: f.cy, t: performance.now() };
+  else click(f.x, f.y);
+}
+canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch') return touchEnd(e);
+  if (locked) { if (e.button === 0) copsButton(false); return; }
+  const p = lisa && lisaXY(e); if (p) lisa.mouseUp(...p);
+});
+canvas.addEventListener('pointercancel', touchEnd);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// ---- on-screen keys (phones and tablets) ------------------------------------------------------------
+//
+// The Lisa keys a phone keyboard lacks (Apple, Option, Clear, Enter, arrows) are buttons. Apple, Option and
+// Shift are sticky: tap one, then the key (or the text) it applies to, and it lets go by itself. The phone's
+// own keyboard is carried by a hidden text field: whatever it adds or removes is typed on the Lisa.
+
+const kb = { mods: new Set() };
+const keyCode = (name) => KEYMAP[{ command: 'MetaLeft', option: 'AltLeft', shift: 'ShiftLeft', clear: 'Escape', return: 'Enter', enter: 'NumpadEnter', tab: 'Tab', backspace: 'Backspace', left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight' }[name]];
+
+function releaseMods() {
+  for (const m of kb.mods) lisa?.key(keyCode(m), false);
+  kb.mods.clear();
+  for (const b of document.querySelectorAll('button.mod')) b.setAttribute('aria-pressed', 'false');
+}
+/** Run `send` (which queues keys or text) with the sticky modifiers held, then let them go. */
+function withMods(send) {
+  if (!lisa) return;
+  for (const m of kb.mods) lisa.key(keyCode(m), true);
+  send();
+  releaseMods();
+}
+for (const b of document.querySelectorAll('button.mod')) {
+  b.addEventListener('click', () => {
+    const m = b.dataset.mod, on = !kb.mods.has(m);
+    on ? kb.mods.add(m) : kb.mods.delete(m);
+    b.setAttribute('aria-pressed', String(on));
+    if (!on) lisa?.key(keyCode(m), false);
+  });
+}
+for (const b of document.querySelectorAll('button[data-key]')) {
+  b.addEventListener('click', () => withMods(() => lisa.tap(keyCode(b.dataset.key))));
+}
+// keep a tapped button from stealing focus from the phone keyboard (which would close it)
+$('keybar').addEventListener('pointerdown', (e) => { if (e.target.closest('button') && e.target.closest('button') !== $('kbToggle') && document.activeElement === $('kbInput')) e.preventDefault(); });
+
+const SENTINEL = '\u200b';   // always present, so Backspace has something to delete even when nothing was typed
+const kbInput = $('kbInput');
+let kbSent = SENTINEL;       // what the field held when we last looked
+function kbReset() { kbInput.value = kbSent = SENTINEL; kbInput.setSelectionRange(1, 1); }
+kbInput.addEventListener('input', (e) => {
+  if (!lisa) return;
+  const now = kbInput.value;
+  let i = 0; while (i < kbSent.length && i < now.length && kbSent[i] === now[i]) i++;
+  const erased = kbSent.length - i, added = now.slice(i).replace(/\u200b/g, '');
+  withMods(() => {
+    for (let n = 0; n < erased; n++) lisa.tap(keyCode('backspace'));
+    if (added) lisa.type(added.replace(/\r?\n/g, '\n'));
+  });
+  kbSent = now;
+  if (!e.isComposing && now.length > 64) kbReset();         // the diff is cheap, but do not let it grow for ever
+});
+kbInput.addEventListener('compositionend', () => kbReset());
+// a hardware keyboard on a tablet: keys that make no text go straight through; the rest arrive as text above
+kbInput.addEventListener('keydown', (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
+  const code = KEYMAP[e.code];
+  const special = /^(Escape|Arrow|Tab$|Enter$|Backspace$)/.test(e.code) || e.ctrlKey || e.metaKey || e.altKey;
+  if (!special || code === undefined || !lisa) return;
+  e.preventDefault();
+  if (!e.repeat && !held.has(code)) { held.add(code); lisa.key(code, true); }
+});
+kbInput.addEventListener('keyup', (e) => {
+  const code = KEYMAP[e.code];
+  if (code !== undefined && held.delete(code)) { e.preventDefault(); lisa?.key(code, false); }
+});
+function showKeyboard(on) {
+  $('kbToggle').setAttribute('aria-pressed', String(on));
+  if (on) { kbReset(); kbInput.focus({ preventScroll: true }); $('keybar').classList.add('show'); } else kbInput.blur();
+}
+$('kbToggle').addEventListener('click', () => showKeyboard(document.activeElement !== kbInput));
+kbInput.addEventListener('blur', () => $('kbToggle').setAttribute('aria-pressed', 'false'));
+// a tap on the screen after the keyboard has been opened should not lose it: typing stays where it was
+
+// ---- per-game key templates (phones and tablets) -----------------------------------------------------------
+//
+// A template (keypads.js) puts the keys one program uses beside the screen, large, in place of the bar of Lisa
+// keys. The floppy's name chooses it, and the Keys menu can change it. A key is held down for as long as the
+// finger stays on it, and for at least TPL_MIN_HOLD ms: a game may read the keyboard only once a frame, and a
+// tap that came and went in between would never be seen. A key with longPress is sent only once the finger has
+// stayed that long, and then as one short press.
+
+const TPL_MIN_HOLD = 60;
+const TPL_KEYS = { space: 'Space', return: 'Enter', backspace: 'Backspace', left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight' };
+const tplCode = (k) => KEYMAP[TPL_KEYS[k] ?? (/^[0-9]$/.test(k) ? 'Digit' + k : 'Key' + k.toUpperCase())];
+const tplDown = new Set();   // keys a template button is holding down
+for (const [id, t] of Object.entries(TEMPLATES)) $('kbTemplate').add(new Option(t.name, id));
+
+function tplPress(code) { if (lisa && !held.has(code)) { held.add(code); tplDown.add(code); lisa.key(code, true); } }
+function tplRelease(code) { tplDown.delete(code); if (held.delete(code)) lisa?.key(code, false); }
+function bindHold(b, code, longPress = 0) {
+  let t0 = 0, timer = 0, pid = null;
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (pid !== null) return;
+    pid = e.pointerId;
+    try { b.setPointerCapture(pid); } catch { /* the pointer already ended */ }
+    if (longPress) {
+      b.style.setProperty('--long', longPress + 'ms');
+      b.classList.add('arming');
+      timer = setTimeout(() => {
+        timer = 0;
+        if (!b.isConnected) return;                        // the page changed under the finger
+        b.classList.replace('arming', 'down');
+        tplPress(code); setTimeout(() => tplRelease(code), TPL_MIN_HOLD);
+      }, longPress);
+    } else { b.classList.add('down'); tplPress(code); t0 = performance.now(); }
+  });
+  const up = (e) => {
+    if (e.pointerId !== pid) return;
+    pid = null;
+    if (longPress) { clearTimeout(timer); timer = 0; b.classList.remove('arming', 'down'); return; }
+    b.classList.remove('down');
+    const wait = TPL_MIN_HOLD - (performance.now() - t0);
+    if (wait > 0) setTimeout(() => tplRelease(code), wait); else tplRelease(code);
+  };
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+function tplButton({ key, label, tone, longPress, span, size, hint, aria, arrow }) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.tabIndex = -1;                      // never take focus (and the phone keyboard) away
+  b.className = ['tk', tone, size, arrow && 'arrow'].filter(Boolean).join(' ');
+  if (span) b.style.gridColumn = `span ${span}`;
+  if (aria) b.setAttribute('aria-label', aria);
+  b.append(label);
+  // the Lisa key under the label, when the label does not already say it
+  const keyName = key.length === 1 && label.toLowerCase() !== key ? key.toUpperCase() : key === 'space' ? 'Space' : '';
+  const sub = [keyName, hint].filter(Boolean).join(' · ');
+  if (sub) { const s = document.createElement('small'); s.textContent = sub; b.append(s); }
+  bindHold(b, tplCode(key), longPress);
+  return b;
+}
+const tplDiv = (cls, ...kids) => { const d = document.createElement('div'); d.className = cls; d.append(...kids); return d; };
+function renderTemplate() {
+  for (const code of [...tplDown]) tplRelease(code);      // a key must not stay down when its button goes
+  const t = coarse.matches && $('showKeys').checked ? TEMPLATES[tpl.id] : null, stage = $('stage');
+  stage.classList.toggle('templated', !!t);
+  $('padLeft').replaceChildren(); $('padRight').replaceChildren();
+  if (!t) { stage.classList.remove('page-digits'); return; }
+  const page = t.pages[tpl.page];
+  stage.classList.toggle('page-digits', !!page.digits);
+  $('kbPage').textContent = t.pages[(tpl.page + 1) % t.pages.length].name;
+  $('kbPage').hidden = t.pages.length < 2;
+  if (page.pad) {
+    const arrow = (key, label, aria) => tplButton({ key, label, aria, arrow: true });
+    const gap = () => tplDiv('spacer');
+    $('padLeft').append(tplDiv('dpad', gap(), arrow('up', '↑', 'Up'), gap(),
+      arrow('left', '←', 'Left'), tplButton({ tone: 'main', ...page.pad.center }), arrow('right', '→', 'Right'),
+      gap(), arrow('down', '↓', 'Down'), gap()));
+    const grid = tplDiv('tkgrid', ...page.buttons.map(tplButton));
+    grid.style.setProperty('--cols', page.columns ?? 3);
+    $('padRight').append(grid);
+  } else if (page.digits) {
+    $('padRight').append(tplDiv('tkdigits', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => tplButton({ key: String(n), label: String(n) })),
+      tplButton({ key: '0', label: '0', span: 3 })));
+    $('padLeft').append(tplDiv('tkside', ...(page.side ?? []).map(tplButton)));
+  }
+}
+function useTemplate(id) { tpl.id = id; tpl.page = 0; $('kbTemplate').value = id; renderTemplate(); }
+/** Called whenever the floppy changes: the disk's own template, or the plain bar. */
+function templateForDisk(name) {
+  if (!tpl.ready) return;                                  // renderSlots runs once before this section is set up
+  const id = templateFor(name) ?? '';
+  if (id !== tpl.id) useTemplate(id);
+}
+$('kbTemplate').addEventListener('change', (e) => useTemplate(e.target.value));
+$('kbPage').addEventListener('click', () => { tpl.page = (tpl.page + 1) % TEMPLATES[tpl.id].pages.length; renderTemplate(); });
+coarse.addEventListener('change', renderTemplate);
+tpl.ready = true;
+$('showKeys').checked = store.get('showKeys', coarse.matches);
+function renderKeys() {
+  const show = $('showKeys').checked;
+  $('keybar').hidden = !show;
+  $('keybar').classList.toggle('show', show);
+  if (!show) { showKeyboard(false); releaseMods(); }
+  renderTemplate();
+}
+$('showKeys').addEventListener('change', () => { store.set('showKeys', $('showKeys').checked); renderKeys(); });
+renderKeys();
+templateForDisk(floppy?.name);
+
+// ---- full screen (where the browser allows it: not iPhone Safari, which has Add to Home Screen instead) ----
+if (document.fullscreenEnabled) {
+  $('btnFull').hidden = false;
+  $('btnFull').addEventListener('click', () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen({ navigationUI: 'hide' })).catch(() => {}));
+}
+
+// ---- scripting API for the console / browser automation ---------------------------------
+//
+// While the page is running in real time, scripted calls and the live loop would fight over the
+// machine's clock, so lisaAuto.pause() first. run(ms) then advances Lisa time exactly.
+
+window.lisaAuto = {
+  get lisa() { return lisa; },
+  ready: romReady,                      // resolves when the startup boot-ROM download (if any) has finished
+  display,                              // .setAspect('lisa'|'square'|'fourThree'), .setEffects({curve, scan, glow, mask, vignette})
+  /** Load a disk image from a URL or bytes, and boot it. */
+  async boot(src, name = 'disk.dc42') {
+    const bytes = typeof src === 'string' ? new Uint8Array(await (await fetch(src)).arrayBuffer()) : src;
+    floppy = { name: typeof src === 'string' ? decodeURIComponent(src.split('/').pop()) : name, bytes };
+    chooseBootFrom('floppy'); renderSlots();
+    return newMachine();
+  },
+  /** Mount a ProFile image (URL or bytes) and boot from it (through the ROM if one is set). */
+  async bootProfile(src, name = 'profile.image') {
+    const bytes = typeof src === 'string' ? new Uint8Array(await (await fetch(src)).arrayBuffer()) : src;
+    profile = { name: typeof src === 'string' ? decodeURIComponent(src.split('/').pop()) : name, bytes }; floppy = null;
+    chooseBootFrom('profile'); renderSlots();
+    return newMachine();
+  },
+  /** Choose a boot ROM (16 KB Uint8Array, or {lo, hi}); the next boot() powers on through it. */
+  setROM(r, name = 'rom') { rom = { name, rom: r }; renderSlots(); },
+  /** Persist guest disk changes now; returns the ProFile as the guest left it. */
+  async saveDisks() { await saveDisks(); return lisa?.exportProfile() ?? null; },
+  /** Turn the speaker on/off (the Sound checkbox). Resolves true once audio is playing. */
+  async sound(on = true) { $('sound').checked = on; $('sound').dispatchEvent(new Event('change')); await sound.loading; return on ? !!sound.node && sound.ctx.state === 'running' : true; },
+  /** Playback health: { queued, underruns, dropped, peak, rms } (samples / 0..1), null until the speaker has played. */
+  audioStats: () => (sound.stats ? { ...sound.stats, state: sound.ctx.state, rate: sound.ctx.sampleRate } : null),
+  snapshot: () => lisa.snapshot(),
+  restore: (s) => lisa.restore(s),
+  pause() { paused = true; $('btnPause').textContent = 'Resume'; },
+  resume() { paused = false; $('btnPause').textContent = 'Pause'; },
+  /** Advance emulated time by exactly `ms` and redraw. */
+  async run(ms) { const st = lisa.run(ms); handleStatus(st); drawScreen(); updateStatus(); return st; },
+  type: (t) => lisa.type(t),
+  key: (code, down) => lisa.key(code, down),
+  move: (x, y) => lisa.mouseMove(x, y),
+  async click(x, y, o) { const r = lisa.click(x, y, o); drawScreen(); return r; },
+  async mouseTo(x, y, o) { const r = lisa.mouseTo(x, y, o); drawScreen(); return r; },
+  pointer: () => lisa.pointer(),
+  screen: () => lisa.screen(),
+  ascii: (o) => lisa.screen().toAscii(o),
+  screenshot() {
+    const bytes = lisa.screenshotPNG();
+    let s = ''; for (const b of bytes) s += String.fromCharCode(b);
+    return 'data:image/png;base64,' + btoa(s);
+  },
+  waitForScreen: (...a) => lisa.waitForScreen(...a),
+  registers: () => lisa.registers(),
+  messages: () => lisa.messages(),
+};

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LisaEm">
+  <meta name="description" content="An Apple Lisa emulator that runs in the browser, on desktop and phones.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>LisaEm Web: ProfilePlus test</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><h1>LisaEm <em>Web</em></h1></div>
+    <div class="status" role="status" aria-live="polite">
+      <button id="btnPanel" class="ghost" aria-expanded="true" aria-controls="panel">Controls</button>
+      <span class="chip" id="chipPower">Off</span>
+      <span class="chip opt" id="chipTime">0.0 s</span>
+      <span class="chip opt" id="chipOS">—</span>
+      <button id="btnFull" class="ghost icon" hidden title="Full screen" aria-label="Full screen">⛶</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage" aria-label="Apple Lisa display">
+      <div class="padzone left" id="padLeft" role="group" aria-label="Game keys, left"></div>
+      <div class="screen" id="screenWrap">
+        <canvas id="screen" width="720" height="500" tabindex="0" aria-label="Lisa screen. Click to capture the keyboard."></canvas>
+        <div class="hint" id="hint"><span class="only-fine">Drop a disk image here, or choose one in Controls</span><span class="only-coarse">Tap <b>Controls</b>, choose a disk image, then Power on</span></div>
+        <div class="start" id="start" hidden>
+          <button class="primary play" id="btnPlay"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg><span id="playLabel">Play</span></button>
+          <p class="start-name" id="startName"></p>
+        </div>
+      </div>
+      <div class="keybar" id="keybar" role="toolbar" aria-label="Lisa keys">
+        <button id="kbToggle" class="kb wide" aria-pressed="false" title="Show the on-screen keyboard">⌨ Keyboard</button>
+        <button id="kbPage" class="kb wide tmplonly" title="Switch the game keys page">123</button>
+        <span class="stdkeys">
+        <button class="kb mod" data-mod="command" aria-pressed="false" title="Apple key (hold for the next key)">⌘ Apple</button>
+        <button class="kb mod" data-mod="option" aria-pressed="false" title="Option key (hold for the next key)">⌥ Option</button>
+        <button class="kb mod" data-mod="shift" aria-pressed="false" title="Shift (hold for the next key)">⇧ Shift</button>
+        <button class="kb" data-key="clear" title="Clear (the Escape key)">Clear</button>
+        <button class="kb" data-key="return">Return</button>
+        <button class="kb" data-key="enter">Enter</button>
+        <button class="kb" data-key="tab">Tab</button>
+        <button class="kb" data-key="backspace" aria-label="Backspace">⌫</button>
+        <button class="kb" data-key="left" aria-label="Left">←</button>
+        <button class="kb" data-key="up" aria-label="Up">↑</button>
+        <button class="kb" data-key="down" aria-label="Down">↓</button>
+        <button class="kb" data-key="right" aria-label="Right">→</button>
+        </span>
+      </div>
+      <div class="padzone right" id="padRight" role="group" aria-label="Game keys, right"></div>
+      <textarea id="kbInput" class="kbinput" rows="1" aria-label="Typing on the Lisa keyboard" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="enter"></textarea>
+      <p class="kbhelp only-fine" id="kbhelp">Click the screen to type. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> = Apple key, <kbd>Alt</kbd> = Option, <kbd>Esc</kbd> = Clear.</p>
+      <p class="kbhelp only-coarse">Touch and move to point, tap to click, double-tap to double-click. To drag, tap, then touch again and move.</p>
+    </section>
+
+    <aside class="panel" id="panel" aria-labelledby="controlsHeading">
+      <div class="card essentials">
+        <h2 id="controlsHeading">Controls</h2>
+        <div class="row power-row">
+          <button class="primary big" id="btnPower" disabled>Power on</button>
+          <button id="btnPause" disabled>Pause</button>
+          <label class="inline"><input type="checkbox" id="sound" autocomplete="off" checked> Sound</label>
+        </div>
+
+        <section class="disks" aria-labelledby="disksHeading">
+          <h3 id="disksHeading">Disks</h3>
+          <div class="image-library" id="localRow">
+            <label class="field-label" for="localDisks">Available images</label>
+            <div class="row">
+              <select id="localDisks" disabled><option>Loading images…</option></select>
+              <button id="btnInsertLocal" disabled title="Put this image in its floppy or hard disk slot">Insert</button>
+            </div>
+          </div>
+          <div class="slot" id="slotFloppy">
+            <span class="slot-label">Floppy</span>
+            <span class="slot-info"><span class="slot-name empty" id="floppyName">empty</span><small class="slot-size" id="floppySize"></small></span>
+            <button id="btnFloppy">Open file…</button>
+            <button id="btnEjectFloppy" class="icon" title="Eject" aria-label="Eject floppy" disabled>⏏</button>
+            <input type="file" id="fileFloppy" hidden>
+          </div>
+          <div class="slot" id="slotProfile">
+            <span class="slot-label">Hard disk</span>
+            <span class="slot-info"><span class="slot-name empty" id="profileName">empty</span><small class="slot-size" id="profileSize"></small></span>
+            <button id="btnProfile">Open file…</button>
+            <button id="btnEjectProfile" class="icon" title="Remove" aria-label="Remove hard disk" disabled>⏏</button>
+            <input type="file" id="fileProfile" hidden>
+          </div>
+          <label class="bootfrom" id="bootFromRow" hidden>Boot from
+            <select id="bootFrom" disabled aria-describedby="bootHint"></select>
+          </label>
+          <p class="note" id="bootHint">Add a floppy or a hard disk to begin.</p>
+          <p class="note"><span id="diskPersistence">Disk changes saved automatically in this browser.</span> <span id="saveState" role="status"></span></p>
+        </section>
+
+        <details class="control-section" data-card="session">
+          <summary>Session</summary>
+          <div class="section-body">
+            <div class="row">
+              <button id="btnSaveState" disabled title="Save the whole machine, to resume later">Save state</button>
+              <button id="btnLoadState" title="Resume the saved machine">Resume saved state</button>
+            </div>
+            <p class="note">One saved state, including the machine and its disks.</p>
+            <div class="row"><button id="btnShot" disabled>Screenshot</button></div>
+            <p class="note" id="sessionStatus" role="status" hidden></p>
+          </div>
+        </details>
+
+        <details class="control-section" data-card="settings">
+          <summary>Settings</summary>
+          <div class="section-body">
+            <div class="settings-row">
+              <label class="field-label">Display
+                <select id="fxPreset">
+                  <option value="clean">Clean</option><option value="soft" selected>Soft CRT</option>
+                  <option value="crt">Strong CRT</option><option value="custom">Custom</option>
+                </select>
+              </label>
+              <label class="field-label">Speed
+                <select id="speed">
+                  <option value="0.25">¼×</option><option value="0.5">½×</option>
+                  <option value="1" selected>1×</option><option value="2">2×</option>
+                  <option value="4">4×</option><option value="8">8×</option>
+                </select>
+              </label>
+            </div>
+            <details class="sub" data-card="display">
+              <summary>Display adjustments</summary>
+              <div class="sub-body">
+                <label class="field-label">Aspect ratio <select id="aspect"></select></label>
+                <label class="slider">Edge <input type="range" id="fxEdge" min="0" max="6" step="0.05" list="edgeStops" aria-label="How sharp the picture's edge is" aria-describedby="edgeName"></label>
+                <datalist id="edgeStops"><option value="0" label="A"></option><option value="1.5" label="B"></option><option value="4" label="C"></option></datalist>
+                <p class="note edgenote" id="edgeName"></p>
+                <label class="slider">Border <input type="range" id="fxBorder" min="0" max="0.15" step="0.005" aria-label="Size of the black border around the screen"></label>
+                <label class="inline check-row"><input type="checkbox" id="contrast" autocomplete="off" checked> Follow the Lisa’s screen brightness</label>
+                <label class="slider">Curvature <input type="range" id="fxCurve" min="0" max="0.2" step="0.005"></label>
+                <label class="slider">Scanlines <input type="range" id="fxScan" min="0" max="1" step="0.05"></label>
+                <label class="slider">Glow <input type="range" id="fxGlow" min="0" max="1" step="0.05"></label>
+                <label class="slider">Mask <input type="range" id="fxMask" min="0" max="1" step="0.05"></label>
+                <label class="slider">Vignette <input type="range" id="fxVig" min="0" max="1" step="0.05"></label>
+              </div>
+            </details>
+            <details class="sub" data-card="rom">
+              <summary>Boot ROM <span class="meta" id="romState">none</span></summary>
+              <div class="sub-body">
+                <div class="slot" id="slotRom">
+                  <span class="slot-label">ROM</span>
+                  <span class="slot-info"><span class="slot-name empty" id="romName">none</span><small class="slot-size" id="romSize"></small></span>
+                  <button id="btnRom">Open file…</button>
+                  <button id="btnForgetRom" class="icon" title="Forget this ROM" aria-label="Forget ROM" disabled>✕</button>
+                  <input type="file" id="fileRom" multiple hidden>
+                </div>
+                <div id="romDefault" hidden>
+                  <div class="row">
+                    <select id="romChoice" aria-label="Boot ROM to download"></select>
+                    <button id="btnFetchRom">Download</button>
+                  </div>
+                  <p class="note" id="romNote"></p>
+                  <label class="inline check-row"><input type="checkbox" id="autoRom" checked> Automatically download the default ROM</label>
+                </div>
+                <div class="row"><button id="btnFolderRom" hidden>Use ROM from folder</button></div>
+                <p class="note">Optional: disks can boot directly without a ROM. <span id="romFrom" hidden>Downloads come from <span id="romHost">bitsavers</span> through this page's server. </span>Choose a 16 KB file or a .lo and .hi pair. ROM files stay in this browser.</p>
+              </div>
+            </details>
+            <details class="sub" data-card="input">
+              <summary>Mouse and keyboard</summary>
+              <div class="sub-body">
+                <label class="inline only-fine"><input type="checkbox" id="captureMouse" autocomplete="off"> Capture mouse</label>
+                <p class="note only-fine" id="captureNote" hidden>Click the screen to lock the pointer; <kbd>Esc</kbd> releases it.</p>
+                <label class="inline check-row"><input type="checkbox" id="showKeys" autocomplete="off"> Show on-screen keys</label>
+                <label class="field-label">Key layout <select id="kbTemplate"><option value="">Standard Lisa keys</option></select></label>
+                <p class="note">Game layouts are used on touch screens. A new floppy selects its matching layout automatically.</p>
+              </div>
+            </details>
+          </div>
+        </details>
+
+        <details class="control-section" data-card="remote" id="remoteCard" hidden>
+          <summary>Remote (ProfilePlus)</summary>
+          <div class="section-body">
+            <p class="note">Development build: the hard disk is a ProfilePlus ESProFile. With the ProfilePlus driver
+              installed on the Lisa, this screen is the one the driver sends over the parallel port, and the mouse
+              and keys used on it reach the Lisa through the driver.</p>
+            <canvas id="remoteScreen" class="remote-screen" width="720" height="364" tabindex="0"
+              aria-label="Remote Lisa screen, sent by the ProfilePlus driver. Point at it to control the Lisa; click it to type."></canvas>
+            <div class="row">
+              <button id="btnRemoteShot">Get screen</button>
+              <label class="inline"><input type="checkbox" id="remoteStream" autocomplete="off"> Stream changes</label>
+            </div>
+            <p class="note" id="remoteStatus" role="status"></p>
+            <h3 class="tool-heading">Synergy server</h3>
+            <p class="note">Not on this static site: the relay to a Synergy server needs <code>serve.mjs --synergy host:port</code>, run locally (a Deskflow, Input Leap or Barrier server
+              with TLS off). Add this screen to the server's layout under the name below.</p>
+            <div class="row">
+              <label class="inline">Screen name <input type="text" id="synergyName" value="lisa" size="10" autocomplete="off"></label>
+              <button id="btnSynergy" disabled>Connect</button>
+            </div>
+            <p class="note" id="synergyStatus" role="status"></p>
+          </div>
+        </details>
+
+        <details class="control-section" data-card="tools">
+          <summary>Tools</summary>
+          <div class="section-body">
+            <h3>Disk files</h3>
+            <div class="row">
+              <button id="btnDlFloppy" disabled>Download floppy</button>
+              <button id="btnDlProfile" disabled>Download hard disk</button>
+            </div>
+            <label class="inline check-row"><input type="checkbox" id="keepChanges" checked> Keep disk changes in this browser</label>
+            <div class="row"><button id="btnRevert" class="danger" disabled>Revert disks</button></div>
+            <p class="note">Revert restores the original disk images.</p>
+            <h3 class="tool-heading">Paste text</h3>
+            <label class="sr-only" for="pasteText">Text to type on the Lisa keyboard</label>
+            <textarea id="pasteText" rows="3" placeholder="Text to type on the Lisa (Enter = Return)"></textarea>
+            <div class="row"><button id="btnType" disabled>Type on Lisa</button></div>
+            <details class="sub" data-card="diagnostics">
+              <summary>Diagnostics <span class="meta" id="renderer"></span></summary>
+              <div class="sub-body"><pre class="log" id="log" aria-live="polite"></pre></div>
+            </details>
+            <details class="sub" data-card="script">
+              <summary>Scripting help</summary>
+              <div class="sub-body">
+                <p class="note">Use <code>window.lisaAuto</code> in the browser console:</p>
+                <pre class="code" id="snippet">await lisaAuto.boot('/media/disk.dc42');
+lisaAuto.pause();                    // stop real-time running
+lisaAuto.type('hello\n');
+await lisaAuto.click(600, 216);      // Lisa pixels
+await lisaAuto.run(2000);            // 2 s of Lisa time
+lisaAuto.screenshot();               // PNG data URL
+lisaAuto.ascii();                    // the screen as text</pre>
+              </div>
+            </details>
+          </div>
+        </details>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

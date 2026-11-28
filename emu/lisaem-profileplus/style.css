@@ -1,0 +1,277 @@
+:root {
+  --bg: #f1efea; --ink: #1d1c1a; --muted: #6a665e; --card: #fbfaf7; --line: #d9d5ca;
+  --accent: #b4491f; --accent-ink: #fff; --focus: #1b6fd1;
+  --aspect: 1.44; --head: 56px; --vh: 100vh;
+}
+@supports (height: 100dvh) { :root { --vh: 100dvh; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131211; --ink: #ece8de; --muted: #9a958a; --card: #1c1b19; --line: #33312c;
+    --accent: #e2733f; --accent-ink: #1a0f08; --focus: #6aa6ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131211; --ink: #ece8de; --muted: #9a958a; --card: #1c1b19; --line: #33312c;
+  --accent: #e2733f; --accent-ink: #1a0f08; --focus: #6aa6ff;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; }
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+.top { height: var(--head); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-size: 18px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+.brand em { font-style: normal; color: var(--accent); }
+.mark { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--ink); position: relative; }
+.mark::after { content: ""; position: absolute; left: 2px; right: 2px; top: 2px; height: 7px; background: var(--ink); border-radius: 2px; }
+.status { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.chip { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip.on { color: var(--ink); border-color: var(--accent); }
+
+/* The screen takes everything the viewport allows at the chosen aspect ratio. */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 0 16px 16px; align-items: start; height: calc(var(--vh) - var(--head)); }
+.layout.nopanel { grid-template-columns: minmax(0, 1fr); }
+.layout.nopanel .panel { display: none; }
+.stage { min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.screen { position: relative; width: min(100%, calc((var(--vh) - var(--head) - 44px) * var(--aspect))); }
+#screen {
+  display: block; width: 100%; aspect-ratio: var(--aspect); background: #0a0a0a; border-radius: 6px;
+  cursor: none; outline: none; box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+#screen:focus-visible { box-shadow: 0 0 0 3px var(--focus); }
+.hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: #8a8579; background: #0a0a0a; border-radius: 6px; font-size: 15px; pointer-events: none; transition: opacity .25s; }
+.hint.gone { opacity: 0; }
+/* a ?disk= link waits behind a Play button: browsers only allow sound after a click */
+.start { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 20px; text-align: center; background: #0a0a0a; border-radius: 6px; }
+.start[hidden] { display: none; }
+button.play { display: inline-flex; align-items: center; gap: 10px; padding: 14px 30px 14px 24px; font-size: 22px; border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,.4); touch-action: manipulation; }
+button.play svg { width: 22px; height: 22px; fill: currentColor; }
+button.play:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+button.play[aria-busy="true"] { opacity: .75; cursor: progress; }
+.start-name { margin: 0; color: #8a8579; font-size: 13.5px; overflow-wrap: anywhere; }
+.screen.drag { outline: 3px dashed var(--accent); outline-offset: 4px; }
+.kbhelp { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; text-align: center; }
+kbd { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+
+.panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-height: calc(var(--vh) - var(--head) - 16px); overflow-y: auto; padding-right: 2px; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; height: auto; }
+  .panel { max-height: none; }
+}
+.card { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.essentials { padding-bottom: 0; }
+.essentials h2 { margin: 0; font-size: 15px; font-weight: 650; }
+.essentials h3 { margin: 0 0 8px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.disks { margin: 24px 0 20px; }
+.field-label { display: grid; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); }
+.field-label select { width: 100%; font-size: 14px; color: var(--ink); }
+.image-library { margin-bottom: 12px; }
+.image-library .row { flex-wrap: nowrap; margin-top: 6px; }
+.settings-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: 12px; }
+.control-section { border-top: 1px solid var(--line); padding: 14px 0; }
+.control-section > summary, .sub > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; }
+.control-section > summary { font-size: 14px; font-weight: 600; }
+.control-section > summary::-webkit-details-marker, .sub > summary::-webkit-details-marker { display: none; }
+.control-section > summary::before, .sub > summary::before { content: "▸"; font-size: 11px; }
+.control-section[open] > summary::before, .sub[open] > summary::before { transform: rotate(90deg); }
+summary .meta { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
+.section-body { margin-top: 14px; }
+.section-body > .row:first-child { margin-top: 0; }
+.sub { margin-top: 16px; font-size: 14px; }
+.sub > summary { color: var(--muted); }
+.sub-body { margin-top: 12px; padding-left: 14px; }
+.check-row { margin-top: 12px; }
+.essentials .tool-heading { margin-top: 20px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* a media slot: label, what is in it, and its buttons */
+.slot { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "label choose eject" "info info info"; align-items: center; column-gap: 8px; row-gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
+.slot:first-child { border-top: 0; }
+.slot > button:nth-of-type(1) { grid-area: choose; }
+.slot > button:nth-of-type(2) { grid-area: eject; }
+.slot-label { grid-area: label; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.slot-info { grid-area: info; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.slot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; min-width: 0; }
+.slot-size { color: var(--muted); font-size: 12px; white-space: nowrap; flex: none; }
+.slot-name.empty { color: var(--muted); font-style: italic; }
+.slot.drag { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 6px; }
+button.icon { padding: 4px 8px; min-width: 32px; }
+
+.power-row { align-items: center; }
+button.big { padding: 9px 18px; font-size: 15px; white-space: nowrap; }
+.bootfrom { min-width: 0; display: grid; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.bootfrom select { width: 100%; font-size: 14px; color: var(--ink); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+button, select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; }
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+button.ghost { background: transparent; }
+button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+textarea { width: 100%; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+select { max-width: 100%; }
+#localDisks, #romChoice { flex: 1; min-width: 0; }
+.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.inline input { flex-shrink: 0; }
+.slider { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; }
+.slider input { width: 100%; }
+.edgenote { margin: 2px 0 0; font-size: 12px; }
+.note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.code { white-space: pre; }
+.code, .log { margin: 8px 0 0; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 12px/1.5 ui-monospace, Menlo, monospace; overflow: auto; white-space: pre-wrap; }
+.code { white-space: pre; }
+.log { max-height: 120px; min-height: 36px; color: var(--muted); }
+code { font: 12.5px ui-monospace, Menlo, monospace; }
+
+/* ---- phones and tablets ------------------------------------------------------------------ */
+
+.only-coarse { display: none; }
+.icon { line-height: 1; }
+
+/* the on-screen Lisa keys (shown on touch devices, or when asked for) */
+.keybar { display: none; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; width: 100%; }
+.keybar.show { display: flex; }
+button.kb { padding: 6px 10px; min-width: 44px; min-height: 40px; font-size: 14px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+button.kb.wide { padding-inline: 14px; }
+button.kb[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+/* the field that carries the phone's keyboard: invisible, but it must be focusable */
+.kbinput { position: fixed; left: 0; top: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; resize: none; pointer-events: none; }
+
+@media (pointer: coarse) {
+  .only-fine { display: none; }
+  .only-coarse { display: initial; }
+  p.only-coarse { display: block; }
+  .hint .only-coarse { display: inline; }
+  .keybar { display: flex; }
+  button, select, textarea, input[type="text"] { min-height: 40px; }
+  .control-section > summary, .sub > summary { min-height: 40px; }
+  .slider input { min-height: 28px; }
+  input[type="checkbox"] { width: 20px; height: 20px; }
+  /* iOS zooms the page when a field under 16px gets focus */
+  select, textarea, .field-label select, .bootfrom select { font-size: 16px; }
+  button.icon { min-width: 40px; }
+  .log { max-height: 160px; }
+  #screen { border-radius: 4px; }
+}
+
+@media (max-width: 600px) {
+  :root { --head: 48px; }
+  .top { padding: 0 10px; gap: 8px; }
+  .brand h1 { font-size: 16px; }
+  .mark { display: none; }
+  .chip.opt { display: none; }
+  .layout { padding: 0 10px 14px; gap: 10px; }
+  .kbhelp { font-size: 12px; }
+  .screen { width: 100%; }
+  /* a phone held upright has plenty of height: let the screen use the full width */
+  #screen { border-radius: 3px; box-shadow: none; }
+  .power-row { flex-wrap: wrap; }
+  .bootfrom { flex-basis: 100%; }
+  button.big { flex: 1; }
+}
+
+/* a phone on its side: the screen takes the height, the controls scroll below it */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root { --head: 40px; }
+  .top { padding: 0 12px; }
+  .layout { height: auto; padding-bottom: 12px; }
+  .screen { width: min(100%, calc((var(--vh) - var(--head) - 52px) * var(--aspect))); }
+  .keybar { margin-top: 4px; gap: 4px; }
+  button.kb { min-height: 34px; padding: 3px 8px; }
+  .kbhelp { display: none; }
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .top { padding-top: 0; }
+}
+
+/* ---- per-game key templates (touch screens) ------------------------------------------------- */
+:root { --danger: #b3261e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --danger: #ff8a7a; } }
+:root[data-theme="dark"] { --danger: #ff8a7a; }
+
+.padzone, .tmplonly { display: none; }
+.stdkeys { display: contents; }
+.kbsel { min-height: 40px; padding: 3px 8px; font-size: 14px; }
+
+.stage.templated {
+  display: grid; gap: 10px 12px; align-items: center; justify-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "screen screen" "bar bar" "left right";
+  --pk: 60px; --bk: 62px;
+}
+.stage.templated > .screen { grid-area: screen; }
+.stage.templated > .keybar { grid-area: bar; margin-top: 0; }
+.stage.templated > .kbhelp { display: none !important; }
+.stage.templated .padzone { display: grid; gap: 6px; }
+.stage.templated .tmplonly { display: inline-flex; align-items: center; justify-content: center; }
+.stage.templated .stdkeys { display: none; }
+.padzone.left { grid-area: left; }
+.padzone.right { grid-area: right; }
+.stage.templated .padzone.right { justify-self: stretch; }
+
+.dpad { display: grid; grid-template-columns: repeat(3, var(--pk)); grid-template-rows: repeat(3, var(--pk)); gap: 6px; }
+.tkgrid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); width: 100%; grid-auto-rows: auto; gap: 6px; }
+.tkgrid > .tk { height: 56px; }
+.tkgrid > .tk.large { height: 66px; }
+.tkgrid > .tk.small { height: 48px; }
+.tkgrid > * { align-self: center; }
+
+button.tk {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 2px 4px;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--card);
+  font-size: 15px; font-weight: 600; line-height: 1.1;
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
+}
+/* a phone keeps the last-touched button "hovered": keep each key's own border */
+button.tk, button.tk:hover:not(:disabled) { border-color: var(--line); }
+button.tk.main, button.tk.main:hover:not(:disabled) { border-color: var(--accent); }
+button.tk.danger, button.tk.danger:hover:not(:disabled) { border-color: var(--danger); }
+button.tk.down, button.tk.down:hover:not(:disabled) { border-color: transparent; }
+button.tk small { font-size: 11px; font-weight: 500; color: var(--muted); }
+button.tk.arrow { font-size: 24px; font-weight: 500; }
+button.tk.main { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+button.tk.main small { color: color-mix(in srgb, var(--accent) 75%, var(--card)); }
+button.tk.danger { border-color: var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, var(--card)); }
+button.tk.danger small { color: color-mix(in srgb, var(--danger) 75%, var(--card)); }
+button.tk.down { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+button.tk.down small { color: inherit; }
+button.tk.danger.down { background: var(--danger); color: #fff; }
+button.tk::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: var(--danger); }
+button.tk.arming::after { width: 100%; transition: width var(--long, 400ms) linear; }
+.dpad .spacer { visibility: hidden; }
+
+/* the "123" page: a phone-style digit pad, with Delete and Return beside it */
+.tkdigits { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 52px; gap: 6px; width: 100%; }
+.tkside { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 52px; gap: 6px; width: 100%; }
+.stage.templated.page-digits { grid-template-areas: "screen screen" "bar bar" "right right" "left left"; }
+.stage.templated.page-digits .padzone { width: 100%; }
+.tkdigits button.tk, .tkside button.tk { font-size: 20px; }
+
+/* a phone on its side: the keys sit either side of the screen, under the player's thumbs */
+@media (orientation: landscape) and (max-height: 520px) {
+  .stage.templated, .stage.templated.page-digits {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "left screen right" "left bar right";
+    gap: 4px 12px; --pk: 58px; --bk: 62px;
+  }
+  .stage.templated .padzone { width: auto; }
+  .stage.templated > .keybar { flex-wrap: nowrap; }
+  .kbsel { min-height: 34px; }
+  .tkdigits { grid-template-columns: repeat(3, 62px); grid-auto-rows: 54px; }
+  .stage.templated .padzone.right { justify-self: center; }
+  .tkgrid { width: calc(var(--bk) * 3 + 12px); }
+  .tkgrid > .tk { height: 50px; } .tkgrid > .tk.large { height: 60px; } .tkgrid > .tk.small { height: 42px; }
+  .tkside { grid-template-columns: 186px; grid-auto-rows: 80px; }
+}
+
+/* Remote (ProfilePlus) panel: the screen the driver sent, at the Lisa's 720:500 display aspect */
+.remote-screen { width: 100%; aspect-ratio: 720 / 500; image-rendering: pixelated; border: 1px solid var(--line, #999);
+  background: #fff; cursor: crosshair; touch-action: none; }
+.remote-screen:focus { outline: 2px solid var(--accent, #36c); outline-offset: 1px; }
